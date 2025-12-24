@@ -1,0 +1,113 @@
+# Dependencies
+node_modules/
+client/node_modules/
+server/node_modules/
+package-lock.json
+client/package-lock.json
+server/package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+client/.env
+client/.env.local
+server/.env
+server/.env.local
+*.env
+env.example.txt
+
+# Build outputs
+dist/
+build/
+client/dist/
+client/build/
+server/dist/
+server/build/
+*.tgz
+*.tar.gz
+
+# Uploads and user-generated content
+server/uploads/
+uploads/
+*.jpg
+*.jpeg
+*.png
+*.gif
+*.webp
+!client/public/*.jpg
+!client/public/*.jpeg
+!client/public/*.png
+!client/public/*.gif
+!client/public/*.webp
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Runtime data
+pids/
+*.pid
+*.seed
+*.pid.lock
+
+# Coverage directory used by tools like istanbul
+coverage/
+*.lcov
+.nyc_output/
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+*.sublime-project
+*.sublime-workspace
+*.code-workspace
+
+# OS files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# Temporary files
+*.tmp
+*.temp
+.cache/
+.temp/
+tmp/
+temp/
+
+# MongoDB
+*.db
+*.sqlite
+*.sqlite3
+data/
+
+# Testing
+.coverage/
+.nyc_output/
+test-results/
+playwright-report/
+
+# Misc
+*.pem
+.cert/
+.ssl/
+

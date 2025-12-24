@@ -1,0 +1,30 @@
+.placeholder-container {
+  max-width: 800px;
+  margin: 4rem auto;
+  padding: 0 2rem;
+  text-align: center;
+}
+
+.placeholder-container h1 {
+  font-size: 3rem;
+  color: #333;
+  margin-bottom: 1rem;
+}
+
+.placeholder-container > p {
+  font-size: 2rem;
+  color: #667eea;
+  font-weight: bold;
+  margin-bottom: 1rem;
+}
+
+.placeholder-subtitle {
+  font-size: 1.2rem !important;
+  color: #666 !important;
+  font-weight: normal !important;
+}
+
+
+
+
+
