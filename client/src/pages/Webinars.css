@@ -215,6 +215,17 @@
   box-shadow: 0 8px 16px rgba(102, 126, 234, 0.3);
 }
 
+.register-btn.registered {
+  background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+  cursor: default;
+  opacity: 0.9;
+}
+
+.register-btn.registered:hover {
+  transform: none;
+  box-shadow: none;
+}
+
 .event-image-clickable {
   cursor: pointer;
   transition: transform 0.2s ease;

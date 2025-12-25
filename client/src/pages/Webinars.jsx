@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
+import { SignIn as ClerkSignIn, useAuth, useUser } from '@clerk/clerk-react';
 import Navbar from '../components/Navbar';
 import axios from 'axios';
+import toast from 'react-hot-toast';
 import './Webinars.css';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
@@ -10,6 +12,8 @@ function Webinars() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [previewImage, setPreviewImage] = useState(null);
+  const { isSignedIn, user } = useUser();
+  const { getToken } = useAuth();
 
   useEffect(() => {
     fetchWebinars();
@@ -27,11 +31,30 @@ function Webinars() {
   };
 
   const handleRegister = async (webinarId) => {
+    if (!isSignedIn) {
+      toast.error('Please sign in to register for webinars');
+      return;
+    }
+
     try {
-      // TODO: Implement user registration for webinars
-      alert('Registration feature coming soon!');
+      const token = await getToken();
+      const response = await axios.post(`${API_URL}/events/${webinarId}/register`, {
+        userId: user.id,
+        userEmail: user.primaryEmailAddress?.emailAddress || user.emailAddresses[0]?.emailAddress,
+        userName: `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'User'
+      }, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+
+      if (response.data.success) {
+        toast.success(response.data.message);
+        // Refresh webinars to update participant count
+        fetchWebinars();
+      }
     } catch (error) {
-      setError('Failed to register for webinar');
+      toast.error(error.response?.data?.error || 'Failed to register for webinar');
     }
   };
 
@@ -113,6 +136,9 @@ function Webinars() {
                     <div className="event-detail">
                       <strong>Instructor:</strong> {webinar.instructor}
                     </div>
+                    <div className="event-detail">
+                      <strong>Participants:</strong> {webinar.participants?.length || 0} enrolled
+                    </div>
                   </div>
 
                   {webinar.tags && webinar.tags.length > 0 && (
@@ -124,12 +150,37 @@ function Webinars() {
                   )}
 
                   <div className="event-actions">
-                    <button 
-                      onClick={() => handleRegister(webinar._id)}
-                      className="register-btn"
-                    >
-                      Register Now
-                    </button>
+                    {(() => {
+                      const isRegistered = webinar.participants?.some(
+                        participant => participant.userId === user?.id
+                      );
+                      
+                      if (!isSignedIn) {
+                        return (
+                          <button 
+                            className="register-btn"
+                            onClick={() => toast.error('Please sign in to register')}
+                          >
+                            Sign In to Register
+                          </button>
+                        );
+                      } else if (isRegistered) {
+                        return (
+                          <button className="register-btn registered" disabled>
+                            ✓ Registered
+                          </button>
+                        );
+                      } else {
+                        return (
+                          <button 
+                            className="register-btn"
+                            onClick={() => handleRegister(webinar._id)}
+                          >
+                            Register Now
+                          </button>
+                        );
+                      }
+                    })()}
                   </div>
                 </div>
               </div>

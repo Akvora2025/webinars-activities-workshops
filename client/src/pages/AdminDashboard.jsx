@@ -33,6 +33,8 @@ function AdminDashboard() {
   });
   const [selectedImage, setSelectedImage] = useState(null);
   const [imagePreview, setImagePreview] = useState('');
+  const [showParticipantsModal, setShowParticipantsModal] = useState(false);
+  const [selectedEventParticipants, setSelectedEventParticipants] = useState([]);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -231,6 +233,11 @@ function AdminDashboard() {
     navigate('/admin/login');
   };
 
+  const handleViewParticipants = (event) => {
+    setSelectedEventParticipants(event.participants || []);
+    setShowParticipantsModal(true);
+  };
+
   if (loading && events.length === 0) {
     return <div className="admin-loading">Loading...</div>;
   }
@@ -294,10 +301,13 @@ function AdminDashboard() {
                 <div className="event-details">
                   <p><strong>Date:</strong> {new Date(event.date).toLocaleDateString()}</p>
                   <p><strong>Instructor:</strong> {event.instructor}</p>
-                  <p><strong>Participants:</strong> {event.currentParticipants}/{event.maxParticipants || 'Unlimited'}</p>
+                  <p><strong>Participants:</strong> {event.participants?.length || 0} registered</p>
                   <p><strong>Status:</strong> {event.status}</p>
                 </div>
                 <div className="event-actions">
+                  <button onClick={() => handleViewParticipants(event)} className="view-participants-btn">
+                    View Participants
+                  </button>
                   <button onClick={() => handleEdit(event)} className="edit-btn">Edit</button>
                   <button onClick={() => handleDelete(event._id)} className="delete-btn">Delete</button>
                 </div>
@@ -480,6 +490,48 @@ function AdminDashboard() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {showParticipantsModal && (
+        <div className="modal-overlay">
+          <div className="modal-content participants-modal">
+            <div className="modal-header">
+              <h2>Event Participants</h2>
+              <button 
+                onClick={() => setShowParticipantsModal(false)} 
+                className="close-modal"
+              >
+                ×
+              </button>
+            </div>
+            <div className="participants-list">
+              {selectedEventParticipants.length === 0 ? (
+                <p className="no-participants">No participants registered yet</p>
+              ) : (
+                <div className="participants-grid">
+                  {selectedEventParticipants.map((participant, index) => (
+                    <div key={index} className="participant-card">
+                      <div className="participant-info">
+                        <h4>{participant.name}</h4>
+                        <p>{participant.email}</p>
+                        <small>Registered: {new Date(participant.registeredAt).toLocaleDateString()}</small>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+            <div className="modal-footer">
+              <p>Total Participants: {selectedEventParticipants.length}</p>
+              <button 
+                onClick={() => setShowParticipantsModal(false)} 
+                className="close-btn"
+              >
+                Close
+              </button>
+            </div>
           </div>
         </div>
       )}

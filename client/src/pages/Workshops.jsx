@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
+import { useAuth, useUser } from '@clerk/clerk-react';
 import Navbar from '../components/Navbar';
 import axios from 'axios';
+import toast from 'react-hot-toast';
 import './Workshops.css';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
@@ -10,6 +12,8 @@ function Workshops() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [previewImage, setPreviewImage] = useState(null);
+  const { isSignedIn, user } = useUser();
+  const { getToken } = useAuth();
 
   useEffect(() => {
     fetchWorkshops();
@@ -27,11 +31,30 @@ function Workshops() {
   };
 
   const handleRegister = async (workshopId) => {
+    if (!isSignedIn) {
+      toast.error('Please sign in to register for workshops');
+      return;
+    }
+
     try {
-      // TODO: Implement user registration for workshops
-      alert('Registration feature coming soon!');
+      const token = await getToken();
+      const response = await axios.post(`${API_URL}/events/${workshopId}/register`, {
+        userId: user.id,
+        userEmail: user.primaryEmailAddress?.emailAddress || user.emailAddresses[0]?.emailAddress,
+        userName: `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'User'
+      }, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+
+      if (response.data.success) {
+        toast.success(response.data.message);
+        // Refresh workshops to update participant count
+        fetchWorkshops();
+      }
     } catch (error) {
-      setError('Failed to register for workshop');
+      toast.error(error.response?.data?.error || 'Failed to register for workshop');
     }
   };
 

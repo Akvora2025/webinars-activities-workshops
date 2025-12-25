@@ -82,9 +82,35 @@ const eventSchema = new mongoose.Schema({
     required: true
   },
   registeredUsers: [{
-    user: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'User'
+    userId: {
+      type: String,
+      required: true
+    },
+    email: {
+      type: String,
+      required: true
+    },
+    name: {
+      type: String,
+      required: true
+    },
+    registeredAt: {
+      type: Date,
+      default: Date.now
+    }
+  }],
+  participants: [{
+    userId: {
+      type: String,
+      required: true
+    },
+    email: {
+      type: String,
+      required: true
+    },
+    name: {
+      type: String,
+      required: true
     },
     registeredAt: {
       type: Date,

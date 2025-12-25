@@ -102,7 +102,6 @@ router.get('/', verifyAdminToken, async (req, res) => {
 
     const events = await Event.find(filter)
       .populate('createdBy', 'firstName lastName email')
-      .populate('registeredUsers.user', 'firstName lastName email')
       .sort({ date: 1 });
 
     res.json({
@@ -119,8 +118,7 @@ router.get('/', verifyAdminToken, async (req, res) => {
 router.get('/:id', verifyAdminToken, async (req, res) => {
   try {
     const event = await Event.findById(req.params.id)
-      .populate('createdBy', 'firstName lastName email')
-      .populate('registeredUsers.user', 'firstName lastName email');
+      .populate('createdBy', 'firstName lastName email');
 
     if (!event) {
       return res.status(404).json({ error: 'Event not found' });
@@ -205,6 +203,84 @@ router.delete('/:id', verifyAdminToken, async (req, res) => {
   } catch (error) {
     console.error('Delete event error:', error);
     res.status(500).json({ error: 'Failed to delete event' });
+  }
+});
+
+// Register for event
+router.post('/:eventId/register', async (req, res) => {
+  try {
+    const { userId, userEmail, userName } = req.body;
+    
+    if (!userId || !userEmail) {
+      return res.status(400).json({ error: 'User ID and email are required' });
+    }
+
+    const event = await Event.findById(req.params.eventId);
+    
+    if (!event) {
+      return res.status(404).json({ error: 'Event not found' });
+    }
+
+    // Check if user is already registered
+    const isAlreadyRegistered = event.participants.some(
+      participant => participant.userId === userId
+    );
+
+    if (isAlreadyRegistered) {
+      return res.status(400).json({ error: 'Already registered for this event' });
+    }
+
+    // Add user to participants
+    event.participants.push({
+      userId,
+      email: userEmail,
+      name: userName || 'User',
+      registeredAt: new Date()
+    });
+
+    await event.save();
+    
+    res.json({ 
+      success: true, 
+      message: 'Successfully registered for event',
+      participantCount: event.participants.length
+    });
+  } catch (error) {
+    console.error('Event registration error:', error);
+    res.status(500).json({ error: 'Failed to register for event' });
+  }
+});
+
+// Unregister from event
+router.delete('/:eventId/unregister', async (req, res) => {
+  try {
+    const { userId } = req.body;
+    
+    if (!userId) {
+      return res.status(400).json({ error: 'User ID is required' });
+    }
+
+    const event = await Event.findById(req.params.eventId);
+    
+    if (!event) {
+      return res.status(404).json({ error: 'Event not found' });
+    }
+
+    // Remove user from participants
+    event.participants = event.participants.filter(
+      participant => participant.userId !== userId
+    );
+
+    await event.save();
+    
+    res.json({ 
+      success: true, 
+      message: 'Successfully unregistered from event',
+      participantCount: event.participants.length
+    });
+  } catch (error) {
+    console.error('Event unregistration error:', error);
+    res.status(500).json({ error: 'Failed to unregister from event' });
   }
 });
 

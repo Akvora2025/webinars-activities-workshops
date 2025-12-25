@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
+import { useAuth, useUser } from '@clerk/clerk-react';
 import Navbar from '../components/Navbar';
 import axios from 'axios';
+import toast from 'react-hot-toast';
 import './Internships.css';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
@@ -10,6 +12,8 @@ function Internships() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [previewImage, setPreviewImage] = useState(null);
+  const { isSignedIn, user } = useUser();
+  const { getToken } = useAuth();
 
   useEffect(() => {
     fetchInternships();
@@ -27,11 +31,30 @@ function Internships() {
   };
 
   const handleApply = async (internshipId) => {
+    if (!isSignedIn) {
+      toast.error('Please sign in to apply for internships');
+      return;
+    }
+
     try {
-      // TODO: Implement user application for internships
-      alert('Application feature coming soon!');
+      const token = await getToken();
+      const response = await axios.post(`${API_URL}/events/${internshipId}/register`, {
+        userId: user.id,
+        userEmail: user.primaryEmailAddress?.emailAddress || user.emailAddresses[0]?.emailAddress,
+        userName: `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'User'
+      }, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+
+      if (response.data.success) {
+        toast.success(response.data.message);
+        // Refresh internships to update participant count
+        fetchInternships();
+      }
     } catch (error) {
-      setError('Failed to apply for internship');
+      toast.error(error.response?.data?.error || 'Failed to apply for internship');
     }
   };
 
