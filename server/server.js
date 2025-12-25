@@ -7,6 +7,9 @@ import fs from 'fs';
 import { fileURLToPath } from 'url';
 import authRoutes from './routes/auth.js';
 import userRoutes from './routes/users.js';
+import adminRoutes from './routes/admin.js';
+import eventRoutes from './routes/events.js';
+import publicEventRoutes from './routes/publicEvents.js';
 
 dotenv.config();
 
@@ -32,6 +35,9 @@ app.use('/uploads', express.static(uploadsDir));
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
+app.use('/api/admin', adminRoutes);
+app.use('/api/events', eventRoutes);
+app.use('/api/public-events', publicEventRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {
@@ -39,7 +45,7 @@ app.get('/api/health', (req, res) => {
 });
 
 // Connect to MongoDB (default to IPv4 loopback to avoid ::1 issues on Windows)
-const mongoUri = process.env.MONGODB_URI || 'mongodb+srv://Aravind:Aravind%402041@cluster0.ykz5b.mongodb.net/Akvora_Webiners';
+const mongoUri = process.env.MONGODB_URI || 'mongodb://localhost:27017/akvora';
 
 mongoose.connect(mongoUri)
   .then(() => {
