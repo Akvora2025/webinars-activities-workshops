@@ -1,6 +1,6 @@
 import mongoose from 'mongoose';
 
-mongoose.connect('mongodb://localhost:27017/Akvora')
+mongoose.connect('mongodb+srv://Aravind:Aravind%402041@cluster0.ykz5b.mongodb.net/Akvora_Webiners')
   .then(async () => {
     const collections = await mongoose.connection.db.listCollections().toArray();
     console.log('Collections:', collections.map(c => c.name));
