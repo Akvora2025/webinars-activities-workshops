@@ -3,8 +3,10 @@ import mongoose from 'mongoose';
 const userSchema = new mongoose.Schema({
   clerkId: {
     type: String,
-    required: true,
+    // Clerk ID is optional (for admin users who don't use Clerk)
+    required: false,
     unique: true,
+    sparse: true, // Only enforce uniqueness for documents that have clerkId
     index: true
   },
   akvoraId: {

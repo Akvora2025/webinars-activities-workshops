@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import './AdminDashboard.css';
 
@@ -29,13 +29,20 @@ function AdminDashboard() {
     requirements: '',
     whatYouWillLearn: '',
     price: 0,
+    upiId: '',
+    payeeName: '',
     status: 'upcoming'
   });
   const [selectedImage, setSelectedImage] = useState(null);
   const [imagePreview, setImagePreview] = useState('');
   const [showParticipantsModal, setShowParticipantsModal] = useState(false);
   const [selectedEventParticipants, setSelectedEventParticipants] = useState([]);
+  const [showRegistrationsModal, setShowRegistrationsModal] = useState(false);
+  const [registrations, setRegistrations] = useState([]);
+  const [selectedWorkshopForReg, setSelectedWorkshopForReg] = useState(null);
+  const [loadingRegistrations, setLoadingRegistrations] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
     const token = localStorage.getItem('adminToken');
@@ -46,6 +53,13 @@ function AdminDashboard() {
 
     fetchEvents();
     fetchStats();
+
+    // Check if we came here with an event to edit
+    if (location.state?.editEvent) {
+      handleEdit(location.state.editEvent);
+      // Clean up the state so it doesn't re-open on refresh
+      window.history.replaceState({}, document.title);
+    }
   }, [navigate]);
 
   const fetchEvents = async () => {
@@ -85,10 +99,10 @@ function AdminDashboard() {
 
     try {
       const token = localStorage.getItem('adminToken');
-      
+
       // Create FormData for file upload
       const formDataToSend = new FormData();
-      
+
       // Add all form fields
       Object.keys(formData).forEach(key => {
         if (key !== 'imageUrl') {
@@ -155,14 +169,16 @@ function AdminDashboard() {
       requirements: event.requirements.join('\n'),
       whatYouWillLearn: event.whatYouWillLearn.join('\n'),
       price: event.price,
+      upiId: event.upiId || '',
+      payeeName: event.payeeName || '',
       status: event.status
     });
-    
+
     // Set image preview if existing image
     if (event.imageUrl) {
       setImagePreview(`${API_URL.replace('/api', '')}${event.imageUrl}`);
     }
-    
+
     setShowCreateForm(true);
   };
 
@@ -221,6 +237,8 @@ function AdminDashboard() {
       requirements: '',
       whatYouWillLearn: '',
       price: 0,
+      upiId: '',
+      payeeName: '',
       status: 'upcoming'
     });
     setSelectedImage(null);
@@ -236,6 +254,45 @@ function AdminDashboard() {
   const handleViewParticipants = (event) => {
     setSelectedEventParticipants(event.participants || []);
     setShowParticipantsModal(true);
+  };
+
+  const handleViewRegistrations = async (workshop) => {
+    setSelectedWorkshopForReg(workshop);
+    setLoadingRegistrations(true);
+    setShowRegistrationsModal(true);
+    try {
+      const token = localStorage.getItem('adminToken');
+      const response = await axios.get(`${API_URL}/registrations/event/${workshop._id}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setRegistrations(response.data.registrations);
+    } catch (error) {
+      console.error('Failed to fetch registrations:', error);
+      setError('Failed to fetch registrations');
+    } finally {
+      setLoadingRegistrations(false);
+    }
+  };
+
+  const handleUpdateRegistrationStatus = async (regId, status) => {
+    try {
+      const token = localStorage.getItem('adminToken');
+      const response = await axios.put(`${API_URL}/registrations/${regId}/status`, { status }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      if (response.data.success) {
+        // Update local state
+        setRegistrations(prev => prev.map(reg =>
+          reg._id === regId ? { ...reg, status } : reg
+        ));
+        // Refresh events as participant list might have changed
+        fetchEvents();
+      }
+    } catch (error) {
+      console.error('Failed to update status:', error);
+      alert('Failed to update status');
+    }
   };
 
   if (loading && events.length === 0) {
@@ -279,12 +336,12 @@ function AdminDashboard() {
         <div className="events-section">
           <div className="section-header">
             <h2>Events Management</h2>
-            <button 
+            <button
               onClick={() => {
                 setShowCreateForm(true);
                 setEditingEvent(null);
                 resetForm();
-              }} 
+              }}
               className="create-btn"
             >
               Create New Event
@@ -293,7 +350,11 @@ function AdminDashboard() {
 
           <div className="events-grid">
             {events.map((event) => (
-              <div key={event._id} className="event-card">
+              <div
+                key={event._id}
+                className="event-card-clickable"
+                onClick={() => navigate(`/admin/events/${event._id}`)}
+              >
                 <div className="event-header">
                   <h3>{event.title}</h3>
                   <span className={`event-type ${event.type}`}>{event.type}</span>
@@ -303,13 +364,12 @@ function AdminDashboard() {
                   <p><strong>Instructor:</strong> {event.instructor}</p>
                   <p><strong>Participants:</strong> {event.participants?.length || 0} registered</p>
                   <p><strong>Status:</strong> {event.status}</p>
+                  {event.type === 'workshop' && (
+                    <p><strong>UPI:</strong> {event.upiId || 'Not set'}</p>
+                  )}
                 </div>
-                <div className="event-actions">
-                  <button onClick={() => handleViewParticipants(event)} className="view-participants-btn">
-                    View Participants
-                  </button>
-                  <button onClick={() => handleEdit(event)} className="edit-btn">Edit</button>
-                  <button onClick={() => handleDelete(event._id)} className="delete-btn">Delete</button>
+                <div className="event-card-footer">
+                  <span className="view-details-hint">Click to manage event →</span>
                 </div>
               </div>
             ))}
@@ -328,7 +388,7 @@ function AdminDashboard() {
                   <input
                     type="text"
                     value={formData.title}
-                    onChange={(e) => setFormData({...formData, title: e.target.value})}
+                    onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                     required
                   />
                 </div>
@@ -336,7 +396,7 @@ function AdminDashboard() {
                   <label>Type</label>
                   <select
                     value={formData.type}
-                    onChange={(e) => setFormData({...formData, type: e.target.value})}
+                    onChange={(e) => setFormData({ ...formData, type: e.target.value })}
                   >
                     <option value="workshop">Workshop</option>
                     <option value="webinar">Webinar</option>
@@ -347,7 +407,7 @@ function AdminDashboard() {
                   <label>Description</label>
                   <textarea
                     value={formData.description}
-                    onChange={(e) => setFormData({...formData, description: e.target.value})}
+                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                     required
                     rows={3}
                   />
@@ -357,7 +417,7 @@ function AdminDashboard() {
                   <input
                     type="datetime-local"
                     value={formData.date}
-                    onChange={(e) => setFormData({...formData, date: e.target.value})}
+                    onChange={(e) => setFormData({ ...formData, date: e.target.value })}
                     required
                   />
                 </div>
@@ -366,7 +426,7 @@ function AdminDashboard() {
                   <input
                     type="text"
                     value={formData.duration}
-                    onChange={(e) => setFormData({...formData, duration: e.target.value})}
+                    onChange={(e) => setFormData({ ...formData, duration: e.target.value })}
                     placeholder="e.g., 2 hours, 3 days"
                     required
                   />
@@ -376,7 +436,7 @@ function AdminDashboard() {
                   <input
                     type="text"
                     value={formData.location}
-                    onChange={(e) => setFormData({...formData, location: e.target.value})}
+                    onChange={(e) => setFormData({ ...formData, location: e.target.value })}
                     placeholder="Online or physical address"
                   />
                 </div>
@@ -385,7 +445,7 @@ function AdminDashboard() {
                   <input
                     type="number"
                     value={formData.maxParticipants || ''}
-                    onChange={(e) => setFormData({...formData, maxParticipants: e.target.value ? parseInt(e.target.value) : null})}
+                    onChange={(e) => setFormData({ ...formData, maxParticipants: e.target.value ? parseInt(e.target.value) : null })}
                     placeholder="Leave empty for unlimited"
                   />
                 </div>
@@ -394,7 +454,7 @@ function AdminDashboard() {
                   <input
                     type="text"
                     value={formData.instructor}
-                    onChange={(e) => setFormData({...formData, instructor: e.target.value})}
+                    onChange={(e) => setFormData({ ...formData, instructor: e.target.value })}
                     required
                   />
                 </div>
@@ -429,7 +489,7 @@ function AdminDashboard() {
                   <input
                     type="url"
                     value={formData.meetingLink}
-                    onChange={(e) => setFormData({...formData, meetingLink: e.target.value})}
+                    onChange={(e) => setFormData({ ...formData, meetingLink: e.target.value })}
                     placeholder="https://zoom.us/j/..."
                   />
                 </div>
@@ -438,7 +498,7 @@ function AdminDashboard() {
                   <input
                     type="text"
                     value={formData.tags}
-                    onChange={(e) => setFormData({...formData, tags: e.target.value})}
+                    onChange={(e) => setFormData({ ...formData, tags: e.target.value })}
                     placeholder="web development, react, nodejs"
                   />
                 </div>
@@ -446,7 +506,7 @@ function AdminDashboard() {
                   <label>Requirements (one per line)</label>
                   <textarea
                     value={formData.requirements}
-                    onChange={(e) => setFormData({...formData, requirements: e.target.value})}
+                    onChange={(e) => setFormData({ ...formData, requirements: e.target.value })}
                     rows={3}
                     placeholder="Basic programming knowledge&#10;Computer with internet access"
                   />
@@ -455,7 +515,7 @@ function AdminDashboard() {
                   <label>What You'll Learn (one per line)</label>
                   <textarea
                     value={formData.whatYouWillLearn}
-                    onChange={(e) => setFormData({...formData, whatYouWillLearn: e.target.value})}
+                    onChange={(e) => setFormData({ ...formData, whatYouWillLearn: e.target.value })}
                     rows={4}
                     placeholder="React fundamentals&#10;Node.js and Express.js"
                   />
@@ -465,7 +525,7 @@ function AdminDashboard() {
                   <input
                     type="number"
                     value={formData.price}
-                    onChange={(e) => setFormData({...formData, price: parseFloat(e.target.value)})}
+                    onChange={(e) => setFormData({ ...formData, price: parseFloat(e.target.value) })}
                     min="0"
                     step="0.01"
                   />
@@ -474,14 +534,33 @@ function AdminDashboard() {
                   <label>Status</label>
                   <select
                     value={formData.status}
-                    onChange={(e) => setFormData({...formData, status: e.target.value})}
+                    onChange={(e) => setFormData({ ...formData, status: e.target.value })}
                   >
-                    <option value="upcoming">Upcoming</option>
-                    <option value="ongoing">Ongoing</option>
-                    <option value="completed">Completed</option>
                     <option value="cancelled">Cancelled</option>
                   </select>
                 </div>
+                {formData.type === 'workshop' && (
+                  <>
+                    <div className="form-group">
+                      <label>UPI ID for Payments</label>
+                      <input
+                        type="text"
+                        value={formData.upiId}
+                        onChange={(e) => setFormData({ ...formData, upiId: e.target.value })}
+                        placeholder="akvora@upi"
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label>Payee Name</label>
+                      <input
+                        type="text"
+                        value={formData.payeeName}
+                        onChange={(e) => setFormData({ ...formData, payeeName: e.target.value })}
+                        placeholder="Akvora Learning"
+                      />
+                    </div>
+                  </>
+                )}
               </div>
               <div className="form-actions">
                 <button type="button" onClick={() => setShowCreateForm(false)} className="cancel-btn">Cancel</button>
@@ -499,8 +578,8 @@ function AdminDashboard() {
           <div className="modal-content participants-modal">
             <div className="modal-header">
               <h2>Event Participants</h2>
-              <button 
-                onClick={() => setShowParticipantsModal(false)} 
+              <button
+                onClick={() => setShowParticipantsModal(false)}
                 className="close-modal"
               >
                 ×
@@ -525,8 +604,103 @@ function AdminDashboard() {
             </div>
             <div className="modal-footer">
               <p>Total Participants: {selectedEventParticipants.length}</p>
-              <button 
-                onClick={() => setShowParticipantsModal(false)} 
+              <button
+                onClick={() => setShowParticipantsModal(false)}
+                className="close-btn"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {showRegistrationsModal && (
+        <div className="modal-overlay">
+          <div className="modal-content registrations-modal">
+            <div className="modal-header">
+              <h2>Verify Workshop Registrations</h2>
+              <button
+                onClick={() => setShowRegistrationsModal(false)}
+                className="close-modal"
+              >
+                &times;
+              </button>
+            </div>
+
+            <p className="modal-subtitle">{selectedWorkshopForReg?.title}</p>
+
+            <div className="registrations-list">
+              {loadingRegistrations ? (
+                <div className="loading-spinner"></div>
+              ) : registrations.length === 0 ? (
+                <p className="no-registrations">No registrations found for this workshop.</p>
+              ) : (
+                <div className="table-responsive">
+                  <table className="registrations-table">
+                    <thead>
+                      <tr>
+                        <th>Student Details</th>
+                        <th>UPI Reference</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {registrations.map((reg) => (
+                        <tr key={reg._id}>
+                          <td>
+                            <div className="student-info">
+                              <strong>{reg.user.firstName} {reg.user.lastName}</strong>
+                              <span>{reg.user.akvoraId}</span>
+                              <small>{reg.user.email}</small>
+                            </div>
+                          </td>
+                          <td>
+                            <code>{reg.upiReference}</code>
+                          </td>
+                          <td>
+                            <span className={`status-badge ${reg.status}`}>
+                              {reg.status}
+                            </span>
+                          </td>
+                          <td>
+                            <div className="action-buttons">
+                              {reg.status === 'pending' && (
+                                <>
+                                  <button
+                                    onClick={() => handleUpdateRegistrationStatus(reg._id, 'approved')}
+                                    className="approve-btn"
+                                  >
+                                    Approve
+                                  </button>
+                                  <button
+                                    onClick={() => handleUpdateRegistrationStatus(reg._id, 'rejected')}
+                                    className="reject-btn"
+                                  >
+                                    Reject
+                                  </button>
+                                </>
+                              )}
+                              {reg.status !== 'pending' && (
+                                <button
+                                  onClick={() => handleUpdateRegistrationStatus(reg._id, 'pending')}
+                                  className="reset-btn"
+                                >
+                                  Reset to Pending
+                                </button>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+            <div className="modal-footer">
+              <button
+                onClick={() => setShowRegistrationsModal(false)}
                 className="close-btn"
               >
                 Close

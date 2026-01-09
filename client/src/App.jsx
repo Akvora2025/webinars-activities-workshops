@@ -10,6 +10,7 @@ import Workshops from './pages/Workshops';
 import Internships from './pages/Internships';
 import AdminLogin from './pages/AdminLogin';
 import AdminDashboard from './pages/AdminDashboard';
+import AdminEventDetail from './pages/AdminEventDetail';
 
 function ProtectedRoute({ children }) {
   const { isLoaded, isSignedIn } = useAuth();
@@ -33,12 +34,13 @@ function App() {
         {/* Clerk's multi-step flows need wildcard routes */}
         <Route path="/sign-in/*" element={<SignIn />} />
         <Route path="/sign-up/*" element={<SignUp />} />
-        
+
         {/* Admin login route */}
         <Route path="/admin/login" element={<AdminLogin />} />
-        
+
         {/* Admin dashboard route */}
         <Route path="/admin/dashboard" element={<AdminDashboard />} />
+        <Route path="/admin/events/:id" element={<AdminEventDetail />} />
         <Route
           path="/profile"
           element={

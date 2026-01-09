@@ -42,8 +42,13 @@
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 .error-message {
@@ -215,6 +220,15 @@
   box-shadow: 0 8px 16px rgba(30, 64, 175, 0.3);
 }
 
+.register-btn.registered {
+  background: #dcfce7;
+  color: #15803d;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+  border: 1px solid #15803d;
+}
+
 .event-image-clickable {
   cursor: pointer;
   transition: transform 0.2s ease;
@@ -286,31 +300,31 @@
   .events-container {
     padding: 1rem;
   }
-  
+
   .events-header h1 {
     font-size: 2rem;
   }
-  
+
   .events-grid {
     grid-template-columns: 1fr;
     gap: 1.5rem;
   }
-  
+
   .event-header {
     flex-direction: column;
     align-items: flex-start;
   }
-  
+
   .event-price {
     margin-left: 0;
     margin-top: 0.5rem;
   }
-  
+
   .event-detail {
     flex-direction: column;
     align-items: flex-start;
   }
-  
+
   .event-detail strong {
     min-width: auto;
     margin-right: 0;

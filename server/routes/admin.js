@@ -14,21 +14,47 @@ router.post('/login', async (req, res) => {
       return res.status(400).json({ error: 'Email and password are required' });
     }
 
+    const adminEmail = email.toLowerCase();
+    const defaultAdminEmail = 'admin@akvora.com';
+    const defaultAdminPassword = 'admin123';
+
     // Find admin user
-    const adminUser = await User.findOne({ 
-      email: email.toLowerCase(), 
+    let adminUser = await User.findOne({ 
+      email: adminEmail, 
       role: 'admin' 
     });
 
+    // If admin user doesn't exist, create it
     if (!adminUser) {
-      return res.status(401).json({ error: 'Invalid credentials' });
+      // Only create default admin user for the default email
+      if (adminEmail !== defaultAdminEmail) {
+        return res.status(401).json({ error: 'Invalid credentials' });
+      }
+
+      const hashedPassword = await bcrypt.hash(defaultAdminPassword, 10);
+      const currentYear = new Date().getFullYear();
+
+      adminUser = await User.create({
+        email: defaultAdminEmail,
+        role: 'admin',
+        password: hashedPassword,
+        firstName: 'Admin',
+        lastName: 'User',
+        emailVerified: true,
+        profileCompleted: true,
+        registeredYear: currentYear
+        // Note: clerkId and akvoraId are optional for admin users
+      });
     }
 
-    // Check if password exists and verify
+    // If admin user exists but password is missing, set the default password
     if (!adminUser.password) {
-      return res.status(401).json({ error: 'Invalid credentials' });
+      const hashedPassword = await bcrypt.hash(defaultAdminPassword, 10);
+      adminUser.password = hashedPassword;
+      await adminUser.save();
     }
 
+    // Verify password
     const isValidPassword = await bcrypt.compare(password, adminUser.password);
 
     if (!isValidPassword) {

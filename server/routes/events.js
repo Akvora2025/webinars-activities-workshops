@@ -6,6 +6,7 @@ import fs from 'fs';
 import { fileURLToPath } from 'url';
 import Event from '../models/Event.js';
 import User from '../models/User.js';
+import { verifyAdminToken } from '../middleware/adminAuth.js';
 
 const router = express.Router();
 
@@ -40,27 +41,7 @@ const upload = multer({
   }
 });
 
-// Middleware to verify admin JWT token
-const verifyAdminToken = (req, res, next) => {
-  const token = req.header('Authorization')?.replace('Bearer ', '');
-  
-  if (!token) {
-    return res.status(401).json({ error: 'Access denied. No token provided.' });
-  }
 
-  try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback-secret-key');
-    
-    if (decoded.role !== 'admin') {
-      return res.status(403).json({ error: 'Access denied. Admin role required.' });
-    }
-    
-    req.admin = decoded;
-    next();
-  } catch (error) {
-    res.status(401).json({ error: 'Invalid token.' });
-  }
-};
 
 // Admin routes (all require admin authentication)
 
@@ -96,7 +77,7 @@ router.get('/', verifyAdminToken, async (req, res) => {
   try {
     const { type, status } = req.query;
     const filter = {};
-    
+
     if (type) filter.type = type;
     if (status) filter.status = status;
 
@@ -153,7 +134,7 @@ router.put('/:id', verifyAdminToken, upload.single('eventImage'), async (req, re
     // Add image URL if new image was uploaded
     if (req.file) {
       updateData.imageUrl = `/uploads/events/${req.file.filename}`;
-      
+
       // Delete old image if it exists
       if (event.imageUrl && event.imageUrl.startsWith('/uploads/events/')) {
         const oldImagePath = path.join(__dirname, '..', event.imageUrl);
@@ -210,13 +191,13 @@ router.delete('/:id', verifyAdminToken, async (req, res) => {
 router.post('/:eventId/register', async (req, res) => {
   try {
     const { userId, userEmail, userName } = req.body;
-    
+
     if (!userId || !userEmail) {
       return res.status(400).json({ error: 'User ID and email are required' });
     }
 
     const event = await Event.findById(req.params.eventId);
-    
+
     if (!event) {
       return res.status(404).json({ error: 'Event not found' });
     }
@@ -239,9 +220,9 @@ router.post('/:eventId/register', async (req, res) => {
     });
 
     await event.save();
-    
-    res.json({ 
-      success: true, 
+
+    res.json({
+      success: true,
       message: 'Successfully registered for event',
       participantCount: event.participants.length
     });
@@ -255,13 +236,13 @@ router.post('/:eventId/register', async (req, res) => {
 router.delete('/:eventId/unregister', async (req, res) => {
   try {
     const { userId } = req.body;
-    
+
     if (!userId) {
       return res.status(400).json({ error: 'User ID is required' });
     }
 
     const event = await Event.findById(req.params.eventId);
-    
+
     if (!event) {
       return res.status(404).json({ error: 'Event not found' });
     }
@@ -272,9 +253,9 @@ router.delete('/:eventId/unregister', async (req, res) => {
     );
 
     await event.save();
-    
-    res.json({ 
-      success: true, 
+
+    res.json({
+      success: true,
       message: 'Successfully unregistered from event',
       participantCount: event.participants.length
     });

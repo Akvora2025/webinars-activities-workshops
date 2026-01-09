@@ -71,6 +71,14 @@ const eventSchema = new mongoose.Schema({
     type: Number,
     default: 0
   },
+  upiId: {
+    type: String,
+    default: ''
+  },
+  payeeName: {
+    type: String,
+    default: ''
+  },
   status: {
     type: String,
     enum: ['upcoming', 'ongoing', 'completed', 'cancelled'],

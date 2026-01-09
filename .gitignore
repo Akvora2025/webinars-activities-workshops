@@ -110,4 +110,3 @@ playwright-report/
 *.pem
 .cert/
 .ssl/
-
