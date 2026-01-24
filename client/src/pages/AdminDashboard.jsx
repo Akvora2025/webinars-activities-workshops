@@ -344,6 +344,32 @@ function AdminDashboard() {
             <button onClick={handleLogout} className="logout-btn">Logout</button>
           </div>
         </div>
+        <nav className="admin-nav">
+          <button
+            onClick={() => navigate('/admin/dashboard')}
+            className="admin-nav-btn active"
+          >
+            Dashboard
+          </button>
+          <button
+            onClick={() => navigate('/admin/videos')}
+            className="admin-nav-btn"
+          >
+            Videos
+          </button>
+          <button
+            onClick={() => navigate('/admin/announcements')}
+            className="admin-nav-btn"
+          >
+            Announcements
+          </button>
+          <button
+            onClick={() => navigate('/admin/certificates')}
+            className="admin-nav-btn"
+          >
+            Certificates
+          </button>
+        </nav>
       </header>
 
       <main className="admin-main">
@@ -367,6 +393,7 @@ function AdminDashboard() {
             ))}
           </div>
         )}
+
 
         <div className="events-section">
           <div className="section-header">
@@ -400,7 +427,6 @@ function AdminDashboard() {
                   <p><strong>Instructor:</strong> {event.instructor}</p>
                   <p><strong>Participants:</strong> {event.participants?.length || 0} registered</p>
                   <p><strong>Status:</strong> {getStatusLabel(calculateEventStatus(event.date, event.endDate))}</p>
-
 
                   {event.type === 'workshop' && (
                     <p><strong>UPI:</strong> {event.upiId || 'Not set'}</p>
@@ -756,6 +782,7 @@ function AdminDashboard() {
           </div>
         </div>
       )}
+
     </div>
   );
 }

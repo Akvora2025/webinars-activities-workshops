@@ -100,12 +100,23 @@ export async function getMyRegistrations(req, res) {
         }
 
         const registrations = await WorkshopRegistration.find({ user: user._id })
-            .populate('workshop', 'title date type status imageUrl price')
+            .populate('workshop', 'title date type status imageUrl price meetingLink')
             .sort({ createdAt: -1 });
+
+        // Sanitize: Only show meetingLink if status is approved AND paymentStatus is APPROVED
+        const sanitizedRegistrations = registrations.map(reg => {
+            const regObj = reg.toObject();
+            if (regObj.status !== 'approved' || regObj.paymentStatus !== 'APPROVED') {
+                if (regObj.workshop) {
+                    regObj.workshop.meetingLink = undefined;
+                }
+            }
+            return regObj;
+        });
 
         res.json({
             success: true,
-            registrations
+            registrations: sanitizedRegistrations
         });
     } catch (error) {
         console.error('Get my registrations error:', error);
@@ -146,7 +157,7 @@ export async function updateRegistrationStatus(req, res) {
             return res.status(400).json({ error: 'Invalid status' });
         }
 
-        const registration = await WorkshopRegistration.findById(id);
+        const registration = await WorkshopRegistration.findById(id).populate('user workshop');
         if (!registration) {
             return res.status(404).json({ error: 'Registration not found' });
         }
@@ -172,7 +183,7 @@ export async function updateRegistrationStatus(req, res) {
 
         await registration.save();
 
-        // If approved, optionally add to Event's participants list
+        // If approved, add to Event's participants list
         if (status === 'approved') {
             const event = await Event.findById(registration.workshop);
             const user = await User.findById(registration.user);
@@ -195,6 +206,55 @@ export async function updateRegistrationStatus(req, res) {
             }
         }
 
+        // Create notification for user
+        const { createNotification } = await import('./notificationController.js');
+        const user = registration.user;
+        const workshop = registration.workshop;
+
+        const notificationTitle = status === 'approved'
+            ? `✅ Registration Approved`
+            : status === 'rejected'
+                ? `❌ Registration Rejected`
+                : `⏳ Registration Status Updated`;
+
+        const notificationMessage = status === 'approved'
+            ? `Your registration for "${workshop.title}" has been approved! You're all set.`
+            : status === 'rejected'
+                ? `Your registration for "${workshop.title}" was rejected. Reason: ${registration.rejectionReason}`
+                : `Your registration status for "${workshop.title}" has been updated to ${status}.`;
+
+        await createNotification(
+            user.clerkId,
+            status === 'approved' ? 'approval' : status === 'rejected' ? 'rejection' : 'registration',
+            notificationTitle,
+            notificationMessage,
+            {
+                relatedEvent: workshop._id,
+                relatedRegistration: registration._id,
+                url: `/workshops`
+            }
+        );
+
+        // Emit Socket.IO event to user
+        const io = req.app.get('io');
+        if (io) {
+            io.to(`user:${user.clerkId}`).emit('registration:status-updated', {
+                registrationId: registration._id,
+                status,
+                workshop: {
+                    id: workshop._id,
+                    title: workshop.title
+                },
+                message: notificationMessage
+            });
+
+            // Emit to admin for participant count update
+            io.to('admin').emit('stats:updated', {
+                type: 'registration',
+                action: status
+            });
+        }
+
         res.json({
             success: true,
             message: `Registration ${status} successfully`,
@@ -205,3 +265,4 @@ export async function updateRegistrationStatus(req, res) {
         res.status(500).json({ error: 'Failed to update registration status' });
     }
 }
+

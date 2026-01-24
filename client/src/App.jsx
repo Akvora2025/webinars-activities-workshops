@@ -11,10 +11,17 @@ import Internships from './pages/Internships';
 import AdminLogin from './pages/AdminLogin';
 import AdminDashboard from './pages/AdminDashboard';
 import AdminEventDetail from './pages/AdminEventDetail';
+import AdminVideos from './pages/AdminVideos';
+import AdminAnnouncements from './pages/AdminAnnouncements';
+import AdminCertificates from './pages/AdminCertificates';
+import AdminCertificateIssue from './pages/AdminCertificateIssue';
+import AdminCertificateManage from './pages/AdminCertificateManage';
+import UserCertificates from './pages/UserCertificates';
 import Layout from './components/Layout';
 import Placeholder from './pages/Placeholder';
 import ReportIssue from './pages/ReportIssue';
 import Dashboard from './pages/Dashboard';
+import Videos from './pages/Videos';
 
 
 function ProtectedRoute({ children }) {
@@ -43,9 +50,20 @@ function App() {
         {/* Admin login route */}
         <Route path="/admin/login" element={<AdminLogin />} />
 
-        {/* Admin dashboard route */}
+        {/* Admin dashboard routes */}
         <Route path="/admin/dashboard" element={<AdminDashboard />} />
+        <Route path="/admin/events" element={<Navigate to="/admin/dashboard" replace />} />
         <Route path="/admin/events/:id" element={<AdminEventDetail />} />
+        <Route path="/admin/videos" element={<AdminVideos />} />
+        <Route path="/admin/announcements" element={<AdminAnnouncements />} />
+        <Route path="/admin/announcements" element={<AdminAnnouncements />} />
+
+        {/* Admin Certificates Nested Routes */}
+        <Route path="/admin/certificates" element={<AdminCertificates />}>
+          <Route index element={<Navigate to="issue" replace />} />
+          <Route path="issue" element={<AdminCertificateIssue />} />
+          <Route path="manage" element={<AdminCertificateManage />} />
+        </Route>
         <Route
           path="/profile"
           element={
@@ -95,7 +113,7 @@ function App() {
           path="/certificates"
           element={
             <ProtectedRoute>
-              <Layout><Placeholder title="My Certificates" /></Layout>
+              <Layout><UserCertificates /></Layout>
             </ProtectedRoute>
           }
         />
@@ -103,7 +121,7 @@ function App() {
           path="/videos"
           element={
             <ProtectedRoute>
-              <Layout><Placeholder title="Video Library" /></Layout>
+              <Layout><Videos /></Layout>
             </ProtectedRoute>
           }
         />

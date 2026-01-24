@@ -1,6 +1,6 @@
 import jwt from 'jsonwebtoken';
 
-export const verifyAdminToken = (req, res, next) => {
+export const adminAuth = async (req, res, next) => {
     const token = req.header('Authorization')?.replace('Bearer ', '');
 
     if (!token) {

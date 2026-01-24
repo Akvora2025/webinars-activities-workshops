@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
-import { Search, Bell, Sun, Moon, LogOut } from 'lucide-react';
+import { Search, Sun, Moon, LogOut } from 'lucide-react';
 import { SignOutButton, useUser } from '@clerk/clerk-react';
+import NotificationIcon from './NotificationIcon';
 import './Header.css';
 
 function Header() {
@@ -28,10 +29,7 @@ function Header() {
                     {theme === 'light' ? <Moon size={20} /> : <Sun size={20} />}
                 </button>
 
-                <button className="icon-btn notification-btn" title="Notifications">
-                    <Bell size={20} />
-                    <span className="notification-dot" />
-                </button>
+                <NotificationIcon />
 
                 <div className="header-divider" />
 

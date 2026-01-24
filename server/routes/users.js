@@ -3,7 +3,7 @@ import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
-import { verifyClerkToken } from '../middleware/clerkAuth.js';
+import { clerkMiddleware } from '../middleware/clerkAuth.js';
 import { createOrUpdateProfile, getProfile, getAkvoraId, updateAvatar } from '../controllers/userController.js';
 
 const router = express.Router();
@@ -40,7 +40,7 @@ const upload = multer({
 });
 
 // All user routes require authentication
-router.use(verifyClerkToken);
+router.use(clerkMiddleware);
 
 router.post('/create-profile', createOrUpdateProfile);
 router.get('/profile', getProfile);

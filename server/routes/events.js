@@ -6,7 +6,7 @@ import fs from 'fs';
 import { fileURLToPath } from 'url';
 import Event from '../models/Event.js';
 import User from '../models/User.js';
-import { verifyAdminToken } from '../middleware/adminAuth.js';
+import { adminAuth } from '../middleware/adminAuth.js';
 
 const router = express.Router();
 
@@ -46,7 +46,7 @@ const upload = multer({
 // Admin routes (all require admin authentication)
 
 // Create new event
-router.post('/', verifyAdminToken, upload.single('eventImage'), async (req, res) => {
+router.post('/', adminAuth, upload.single('eventImage'), async (req, res) => {
   try {
     const eventData = {
       ...req.body,
@@ -73,7 +73,7 @@ router.post('/', verifyAdminToken, upload.single('eventImage'), async (req, res)
 });
 
 // Get all events (admin view with full details)
-router.get('/', verifyAdminToken, async (req, res) => {
+router.get('/', adminAuth, async (req, res) => {
   try {
     const { type, status } = req.query;
     const filter = {};
@@ -96,7 +96,7 @@ router.get('/', verifyAdminToken, async (req, res) => {
 });
 
 // Get single event
-router.get('/:id', verifyAdminToken, async (req, res) => {
+router.get('/:id', adminAuth, async (req, res) => {
   try {
     const event = await Event.findById(req.params.id)
       .populate('createdBy', 'firstName lastName email');
@@ -116,7 +116,7 @@ router.get('/:id', verifyAdminToken, async (req, res) => {
 });
 
 // Update event
-router.put('/:id', verifyAdminToken, upload.single('eventImage'), async (req, res) => {
+router.put('/:id', adminAuth, upload.single('eventImage'), async (req, res) => {
   try {
     const event = await Event.findById(req.params.id);
 
@@ -162,7 +162,7 @@ router.put('/:id', verifyAdminToken, upload.single('eventImage'), async (req, re
 });
 
 // Delete event
-router.delete('/:id', verifyAdminToken, async (req, res) => {
+router.delete('/:id', adminAuth, async (req, res) => {
   try {
     const event = await Event.findById(req.params.id);
 
@@ -266,7 +266,7 @@ router.delete('/:eventId/unregister', async (req, res) => {
 });
 
 // Get event statistics
-router.get('/stats/dashboard', verifyAdminToken, async (req, res) => {
+router.get('/stats/dashboard', adminAuth, async (req, res) => {
   try {
     const now = new Date();
     const stats = await Event.aggregate([

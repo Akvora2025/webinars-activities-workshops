@@ -1,6 +1,6 @@
 import express from 'express';
-import { verifyClerkToken } from '../middleware/clerkAuth.js';
-import { verifyAdminToken } from '../middleware/adminAuth.js';
+import { clerkMiddleware } from '../middleware/clerkAuth.js';
+import { adminAuth } from '../middleware/adminAuth.js';
 import {
     registerForWorkshop,
     getMyRegistrations,
@@ -11,11 +11,11 @@ import {
 const router = express.Router();
 
 // User routes
-router.post('/', verifyClerkToken, registerForWorkshop);
-router.get('/my', verifyClerkToken, getMyRegistrations);
+router.post('/', clerkMiddleware, registerForWorkshop);
+router.get('/my', clerkMiddleware, getMyRegistrations);
 
 // Admin routes
-router.get('/event/:workshopId', verifyAdminToken, getWorkshopRegistrations);
-router.put('/:id/status', verifyAdminToken, updateRegistrationStatus);
+router.get('/event/:workshopId', adminAuth, getWorkshopRegistrations);
+router.put('/:id/status', adminAuth, updateRegistrationStatus);
 
 export default router;

@@ -205,9 +205,21 @@ function Workshops() {
 
                       if (status === 'approved' || paymentStatus === 'APPROVED') {
                         return (
-                          <button className="register-btn registered" disabled>
-                            Registered
-                          </button>
+                          <div className="registered-actions">
+                            <button className="register-btn registered" disabled>
+                              Registered
+                            </button>
+                            {registration.workshop?.meetingLink && (
+                              <a
+                                href={registration.workshop.meetingLink}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="join-meeting-btn"
+                              >
+                                Join Meeting
+                              </a>
+                            )}
+                          </div>
                         );
                       }
 

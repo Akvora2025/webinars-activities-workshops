@@ -1,6 +1,6 @@
 import express from 'express';
 import nodemailer from 'nodemailer';
-import { verifyClerkToken } from '../middleware/clerkAuth.js';
+import { clerkMiddleware } from '../middleware/clerkAuth.js';
 import dotenv from 'dotenv';
 
 dotenv.config();
@@ -23,7 +23,7 @@ const transporter = nodemailer.createTransport({
  * @desc    Report an issue and send email to Akvora team
  * @access  Private
  */
-router.post('/', verifyClerkToken, async (req, res) => {
+router.post('/', clerkMiddleware, async (req, res) => {
     const { issue } = req.body;
     const { clerkUser, clerkEmail } = req;
 

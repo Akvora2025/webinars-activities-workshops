@@ -22,7 +22,7 @@ router.get('/', async (req, res) => {
     }
 
     const events = await Event.find(filter)
-      .select('-registeredUsers') // Exclude registered users for privacy
+      .select('-registeredUsers -meetingLink') // Exclude registered users and meeting link for privacy
       .populate('createdBy', 'firstName lastName')
       .sort({ date: 1 });
 
@@ -40,7 +40,7 @@ router.get('/', async (req, res) => {
 router.get('/:id', async (req, res) => {
   try {
     const event = await Event.findById(req.params.id)
-      .select('-registeredUsers')
+      .select('-registeredUsers -meetingLink')
       .populate('createdBy', 'firstName lastName');
 
     if (!event) {
@@ -70,7 +70,7 @@ router.get('/type/:type', async (req, res) => {
     const events = await Event.find({
       type
     })
-      .select('-registeredUsers')
+      .select('-registeredUsers -meetingLink')
       .populate('createdBy', 'firstName lastName')
       .sort({ date: 1 });
 

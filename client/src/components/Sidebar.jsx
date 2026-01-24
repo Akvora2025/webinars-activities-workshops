@@ -29,6 +29,8 @@ const menuItems = [
 
 const adminItems = [
     { path: '/admin/dashboard', name: 'Admin Dashboard', icon: LayoutDashboard },
+    { path: '/admin/announcements', name: 'Announcements', icon: MessageSquare },
+    { path: '/admin/certificates', name: 'Certificates', icon: Award },
 ];
 
 const helpItems = [

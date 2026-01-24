@@ -4,31 +4,31 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 // Initialize Clerk client with secret key
-const clerk = createClerkClient({ 
-  secretKey: process.env.CLERK_SECRET_KEY 
+const clerk = createClerkClient({
+  secretKey: process.env.CLERK_SECRET_KEY
 });
 
 /**
  * Middleware to verify Clerk JWT token
  * The token from Clerk React SDK's getToken() is a session token
  */
-export async function verifyClerkToken(req, res, next) {
+export async function clerkMiddleware(req, res, next) {
   try {
     const authHeader = req.headers.authorization;
-    
+
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       return res.status(401).json({ error: 'No token provided' });
     }
 
     const token = authHeader.split(' ')[1];
-    
+
     try {
       // Verify the session token with Clerk
       const sessionClaims = await clerk.verifyToken(token);
-      
+
       // Extract user ID - Clerk tokens have 'sub' field containing user ID
       const userId = sessionClaims.sub || sessionClaims.userId || sessionClaims.id;
-      
+
       if (!userId) {
         console.error('No user ID found in token claims:', sessionClaims);
         return res.status(401).json({ error: 'Invalid token: no user ID found' });
@@ -39,18 +39,20 @@ export async function verifyClerkToken(req, res, next) {
         const clerkUser = await clerk.users.getUser(userId);
         req.clerkUser = clerkUser;
         req.clerkId = clerkUser.id;
-        req.clerkEmail = clerkUser.emailAddresses?.[0]?.emailAddress || 
-                        clerkUser.primaryEmailAddressId ? 
-                        clerkUser.emailAddresses?.find(e => e.id === clerkUser.primaryEmailAddressId)?.emailAddress : 
-                        null;
+        req.user = { userId: clerkUser.id }; // Add for consistency
+        req.clerkEmail = clerkUser.emailAddresses?.[0]?.emailAddress ||
+          clerkUser.primaryEmailAddressId ?
+          clerkUser.emailAddresses?.find(e => e.id === clerkUser.primaryEmailAddressId)?.emailAddress :
+          null;
       } catch (userError) {
         // If we can't fetch user, use the ID from token
         console.warn('Could not fetch user from Clerk, using token ID:', userError.message);
         req.clerkUser = sessionClaims;
         req.clerkId = userId;
+        req.user = { userId }; // Add for consistency
         req.clerkEmail = sessionClaims.email || null;
       }
-      
+
       next();
     } catch (error) {
       console.error('Token verification error:', error);
@@ -61,4 +63,3 @@ export async function verifyClerkToken(req, res, next) {
     return res.status(500).json({ error: 'Authentication error' });
   }
 }
-
