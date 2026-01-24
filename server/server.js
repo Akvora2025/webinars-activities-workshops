@@ -11,6 +11,7 @@ import adminRoutes from './routes/admin.js';
 import eventRoutes from './routes/events.js';
 import publicEventRoutes from './routes/publicEvents.js';
 import registrationRoutes from './routes/registrations.js';
+import reportRoutes from './routes/report.js';
 
 dotenv.config();
 
@@ -40,6 +41,7 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/events', eventRoutes);
 app.use('/api/public-events', publicEventRoutes);
 app.use('/api/registrations', registrationRoutes);
+app.use('/api/report-issue', reportRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {

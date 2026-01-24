@@ -3,7 +3,6 @@ import { useUser, useAuth } from '@clerk/clerk-react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import Cropper from 'react-easy-crop';
-import Navbar from '../components/Navbar';
 import './Profile.css';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
@@ -25,9 +24,6 @@ function Profile() {
   const [zoom, setZoom] = useState(1);
   const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
   const [localImage, setLocalImage] = useState('');
-  const [isBlocked, setIsBlocked] = useState(false);
-  const [blockReason, setBlockReason] = useState('');
-  const [userStatus, setUserStatus] = useState('ACTIVE');
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -35,6 +31,7 @@ function Profile() {
     phone: '',
     certificateName: ''
   });
+  const [registrations, setRegistrations] = useState([]);
 
   useEffect(() => {
     fetchProfile();
@@ -61,19 +58,24 @@ function Profile() {
         setAkvoraId(userData.akvoraId || '');
         setAvatarUrl(userData.avatarUrl || '');
         setAvatarPreview(userData.avatarUrl || '');
-        setIsBlocked(userData.isBlocked || false);
-        setBlockReason(userData.blockReason || '');
-        setUserStatus(userData.status || (userData.isDeleted ? 'DELETED' : userData.isBlocked ? 'BLOCKED' : 'ACTIVE'));
+
+        // Fetch user's workshop registrations
+        const regResponse = await axios.get(`${API_URL}/registrations/my`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (regResponse.data.success) {
+          setRegistrations(regResponse.data.registrations);
+        }
       }
     } catch (error) {
       // If profile doesn't exist (404), pre-fill with Clerk data
       // This is normal for new OAuth users
       if (error.response?.status === 404 || !error.response) {
         if (user) {
-          const email = user.primaryEmailAddress?.emailAddress || 
-                       user.emailAddresses?.[0]?.emailAddress || 
-                       error.response?.data?.clerkEmail || 
-                       '';
+          const email = user.primaryEmailAddress?.emailAddress ||
+            user.emailAddresses?.[0]?.emailAddress ||
+            error.response?.data?.clerkEmail ||
+            '';
           setFormData({
             firstName: user.firstName || '',
             lastName: user.lastName || '',
@@ -204,7 +206,7 @@ function Profile() {
       const errorMessage = err.response?.data?.error || err.message || 'Failed to save profile';
       console.error('Profile save error:', err);
       setError(errorMessage);
-      
+
       // If it's a "user not found" error, try to create the user
       if (errorMessage.includes('not found') || errorMessage.includes('User not found')) {
         setError('Please try saving again. Creating your profile...');
@@ -218,7 +220,6 @@ function Profile() {
   if (fetching) {
     return (
       <div>
-        <Navbar />
         <div className="profile-container">
           <div>Loading...</div>
         </div>
@@ -228,133 +229,140 @@ function Profile() {
 
   return (
     <div>
-      <Navbar />
       <div className="profile-container">
-        {/* Conditional Rendering: Show ONLY blocked message OR profile content */}
-        {userStatus === 'BLOCKED' || isBlocked ? (
-          // Blocked User Notification - Show ONLY this when blocked
-          <div className="blocked-notification">
-            <div className="blocked-notification-content">
-              <div className="blocked-icon">⚠️</div>
-              <div className="blocked-message">
-                <h3>Your account has been blocked by the AKVORA admin.</h3>
-                {blockReason && (
-                  <div className="block-reason-display">
-                    <p className="block-reason-label"><strong>Reason:</strong></p>
-                    <p className="block-reason-text">{blockReason}</p>
+        <div className="profile-header-card">
+          <div className="avatar-block">
+            <div className="avatar-preview">
+              {avatarPreview ? (
+                <img src={avatarPreview} alt="Avatar" />
+              ) : (
+                <div className="avatar-placeholder">Add Photo</div>
+              )}
+            </div>
+            <label className="avatar-upload-btn">
+              Upload Photo
+              <input type="file" accept="image/*" onChange={handleAvatarChange} />
+            </label>
+            <p className="avatar-hint">PNG/JPG, up to 2MB</p>
+          </div>
+
+          <div className="id-block">
+            <p className="label">AKVORA ID</p>
+            <h2>{akvoraId || 'Pending'}</h2>
+            <p className="muted">{formData.email}</p>
+            {success && <div className="success-message compact">{success}</div>}
+            {error && <div className="error-message compact">{error}</div>}
+          </div>
+        </div>
+
+        <div className="profile-box">
+          <h1>Complete Your Profile</h1>
+
+          <form onSubmit={handleSubmit} className="profile-form">
+            <div className="form-group">
+              <label htmlFor="firstName">First Name</label>
+              <input
+                type="text"
+                id="firstName"
+                name="firstName"
+                value={formData.firstName}
+                onChange={handleChange}
+                required
+              />
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="lastName">Last Name</label>
+              <input
+                type="text"
+                id="lastName"
+                name="lastName"
+                value={formData.lastName}
+                onChange={handleChange}
+                required
+              />
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="email">Email</label>
+              <input
+                type="email"
+                id="email"
+                name="email"
+                value={formData.email}
+                onChange={handleChange}
+                required
+              />
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="phone">Phone</label>
+              <input
+                type="tel"
+                id="phone"
+                name="phone"
+                value={formData.phone}
+                onChange={handleChange}
+              />
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="certificateName">Name in Certificate </label>
+              <input
+                type="text"
+                id="certificateName"
+                name="certificateName"
+                value={formData.certificateName}
+                onChange={handleChange}
+              />
+            </div>
+
+            <div className="form-actions">
+              <button type="submit" disabled={loading} className="submit-btn">
+                {loading ? 'Saving...' : 'Save Profile'}
+              </button>
+            </div>
+          </form>
+        </div>
+
+        {registrations.length > 0 && (
+          <div className="profile-box my-registrations">
+            <h1>My Workshops</h1>
+            <div className="registrations-list">
+              {registrations.map((reg) => (
+                <div key={reg._id} className="registration-item">
+                  <div className="reg-workshop-info">
+                    <h3>{reg.workshop?.title}</h3>
+                    <p>{new Date(reg.workshop?.date).toLocaleDateString()}</p>
                   </div>
-                )}
-                <p>If you believe this is an error, please contact our support team:</p>
-                <div className="blocked-contact-info">
-                  <p><strong>Email:</strong> support@akvora.com</p>
-                  <p><strong>Phone:</strong> +91-XXXXXXXXXX</p>
+                  <div className="reg-status-info">
+                    {reg.status === 'approved' || reg.paymentStatus === 'APPROVED' ? (
+                      <span className="status-badge approved">Approved</span>
+                    ) : (reg.status === 'rejected' || reg.paymentStatus === 'REJECTED') ? (
+                      <div className="rejected-status">
+                        <span className="status-badge rejected">❌ Rejected</span>
+                        {reg.rejectionReason && (
+                          <p className="rejection-reason-text">Reason: {reg.rejectionReason}</p>
+                        )}
+                        <button
+                          onClick={() => navigate('/workshops')}
+                          className="re-register-btn"
+                        >
+                          Register Again
+                        </button>
+                      </div>
+                    ) : (
+                      <span className="status-badge pending">Pending</span>
+                    )}
+                  </div>
                 </div>
-              </div>
+              ))}
             </div>
           </div>
-        ) : (
-          // Profile Content - Show ONLY this when not blocked
-          <>
-            <div className="profile-header-card">
-              <div className="avatar-block">
-                <div className="avatar-preview">
-                  {avatarPreview ? (
-                    <img src={avatarPreview} alt="Avatar" />
-                  ) : (
-                    <div className="avatar-placeholder">Add Photo</div>
-                  )}
-                </div>
-                <label className="avatar-upload-btn">
-                  Upload Photo
-                  <input type="file" accept="image/*" onChange={handleAvatarChange} />
-                </label>
-                <p className="avatar-hint">PNG/JPG, up to 2MB</p>
-              </div>
-
-              <div className="id-block">
-                <p className="label">AKVORA ID</p>
-                <h2>{akvoraId || 'Pending'}</h2>
-                <p className="muted">{formData.email}</p>
-                {success && <div className="success-message compact">{success}</div>}
-                {error && <div className="error-message compact">{error}</div>}
-              </div>
-            </div>
-
-            <div className="profile-box">
-              <h1>Complete Your Profile</h1>
-
-              <form onSubmit={handleSubmit} className="profile-form">
-                <div className="form-group">
-                  <label htmlFor="firstName">First Name</label>
-                  <input
-                    type="text"
-                    id="firstName"
-                    name="firstName"
-                    value={formData.firstName}
-                    onChange={handleChange}
-                    required
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label htmlFor="lastName">Last Name</label>
-                  <input
-                    type="text"
-                    id="lastName"
-                    name="lastName"
-                    value={formData.lastName}
-                    onChange={handleChange}
-                    required
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label htmlFor="email">Email</label>
-                  <input
-                    type="email"
-                    id="email"
-                    name="email"
-                    value={formData.email}
-                    onChange={handleChange}
-                    required
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label htmlFor="phone">Phone</label>
-                  <input
-                    type="tel"
-                    id="phone"
-                    name="phone"
-                    value={formData.phone}
-                    onChange={handleChange}
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label htmlFor="certificateName">Name in Certificate </label>
-                  <input
-                    type="text"
-                    id="certificateName"
-                    name="certificateName"
-                    value={formData.certificateName}
-                    onChange={handleChange}
-                  />
-                </div>
-
-                <div className="form-actions">
-                  <button type="submit" disabled={loading} className="submit-btn">
-                    {loading ? 'Saving...' : 'Save Profile'}
-                  </button>
-                </div>
-              </form>
-            </div>
-          </>
         )}
       </div>
 
-      {/* Only show crop modal when user is not blocked */}
-      {userStatus !== 'BLOCKED' && !isBlocked && cropModalOpen && (
+      {cropModalOpen && (
         <div className="cropper-overlay">
           <div className="cropper-modal">
             <h3>Crop your photo</h3>

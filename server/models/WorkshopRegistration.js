@@ -27,6 +27,18 @@ const workshopRegistrationSchema = new mongoose.Schema({
         enum: ['pending', 'approved', 'rejected'],
         default: 'pending'
     },
+    paymentStatus: {
+        type: String,
+        enum: ['PENDING', 'APPROVED', 'REJECTED'],
+        default: 'PENDING'
+    },
+    rejectionReason: {
+        type: String,
+        default: ''
+    },
+    rejectedAt: {
+        type: Date
+    },
     adminMessage: {
         type: String,
         default: ''
