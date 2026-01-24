@@ -4,7 +4,6 @@ import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
 import { verifyClerkToken } from '../middleware/clerkAuth.js';
-import { checkUserStatus } from '../middleware/checkUserStatus.js';
 import { createOrUpdateProfile, getProfile, getAkvoraId, updateAvatar } from '../controllers/userController.js';
 
 const router = express.Router();
@@ -43,10 +42,10 @@ const upload = multer({
 // All user routes require authentication
 router.use(verifyClerkToken);
 
-// Profile routes - allow blocked users to access these
 router.post('/create-profile', createOrUpdateProfile);
 router.get('/profile', getProfile);
 router.put('/profile', createOrUpdateProfile);
+// Avatar upload with explicit Multer error handling
 router.post('/avatar', (req, res, next) => {
   upload.single('avatar')(req, res, function (err) {
     if (err) {
@@ -58,9 +57,6 @@ router.post('/avatar', (req, res, next) => {
     updateAvatar(req, res, next);
   });
 });
-
-// Other routes - block blocked users from accessing these
-router.use(checkUserStatus);
 router.get('/akvora-id/:clerkId', getAkvoraId);
 
 export default router;

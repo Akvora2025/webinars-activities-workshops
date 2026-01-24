@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { SignIn as ClerkSignIn, useAuth, useUser } from '@clerk/clerk-react';
-import Navbar from '../components/Navbar';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 import './Webinars.css';
@@ -69,7 +68,6 @@ function Webinars() {
   if (loading) {
     return (
       <div>
-        <Navbar />
         <div className="events-loading">
           <div className="loading-spinner"></div>
           <p>Loading webinars...</p>
@@ -80,7 +78,6 @@ function Webinars() {
 
   return (
     <div>
-      <Navbar />
       <div className="events-container">
         <div className="events-header">
           <h1>Webinars</h1>
@@ -100,8 +97,8 @@ function Webinars() {
               <div key={webinar._id} className="event-card">
                 <div className="event-image">
                   {webinar.imageUrl ? (
-                    <img 
-                      src={`${API_URL.replace('/api', '')}${webinar.imageUrl}`} 
+                    <img
+                      src={`${API_URL.replace('/api', '')}${webinar.imageUrl}`}
                       alt={webinar.title}
                       onClick={() => handleImageClick(`${API_URL.replace('/api', '')}${webinar.imageUrl}`, webinar.title)}
                       className="event-image-clickable"
@@ -112,7 +109,7 @@ function Webinars() {
                     </div>
                   )}
                 </div>
-                
+
                 <div className="event-content">
                   <div className="event-header">
                     <h3>{webinar.title}</h3>
@@ -120,15 +117,15 @@ function Webinars() {
                       {webinar.price === 0 ? 'Free' : `$${webinar.price}`}
                     </span>
                   </div>
-                  
+
                   <p className="event-description">{webinar.description}</p>
-                  
+
                   <div className="event-details">
                     <div className="event-detail">
                       <strong>Date:</strong> {new Date(webinar.date).toLocaleDateString()}
                     </div>
                     <div className="event-detail">
-                      <strong>Time:</strong> {new Date(webinar.date).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                      <strong>Time:</strong> {new Date(webinar.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                     </div>
                     <div className="event-detail">
                       <strong>Duration:</strong> {webinar.duration}
@@ -154,10 +151,10 @@ function Webinars() {
                       const isRegistered = webinar.participants?.some(
                         participant => participant.userId === user?.id
                       );
-                      
+
                       if (!isSignedIn) {
                         return (
-                          <button 
+                          <button
                             className="register-btn"
                             onClick={() => toast.error('Please sign in to register')}
                           >
@@ -172,7 +169,7 @@ function Webinars() {
                         );
                       } else {
                         return (
-                          <button 
+                          <button
                             className="register-btn"
                             onClick={() => handleRegister(webinar._id)}
                           >
@@ -188,7 +185,7 @@ function Webinars() {
           </div>
         )}
       </div>
-      
+
       {previewImage && (
         <div className="image-preview-modal" onClick={closePreview}>
           <div className="preview-content" onClick={(e) => e.stopPropagation()}>

@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { useAuth, useUser } from '@clerk/clerk-react';
-import Navbar from '../components/Navbar';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 import WorkshopRegistrationModal from '../components/WorkshopRegistrationModal';
@@ -71,7 +70,6 @@ function Workshops() {
   if (loading) {
     return (
       <div>
-        <Navbar />
         <div className="events-loading">
           <div className="loading-spinner"></div>
           <p>Loading workshops...</p>
@@ -82,7 +80,6 @@ function Workshops() {
 
   return (
     <div>
-      <Navbar />
       <div className="events-container">
         <div className="events-header">
           <h1>Workshops</h1>
@@ -152,18 +149,59 @@ function Workshops() {
                   )}
 
                   <div className="event-actions">
-                    {isRegistered(workshop._id) ? (
-                      <button className="register-btn registered" disabled>
-                        Registered
-                      </button>
-                    ) : (
-                      <button
-                        onClick={() => handleRegisterClick(workshop)}
-                        className="register-btn"
-                      >
-                        Register Now
-                      </button>
-                    )}
+                    {(() => {
+                      const registration = myRegistrations.find(reg => reg.workshop?._id === workshop._id);
+
+                      if (!registration) {
+                        return (
+                          <button
+                            onClick={() => handleRegisterClick(workshop)}
+                            className="register-btn"
+                          >
+                            Register Now
+                          </button>
+                        );
+                      }
+
+                      const status = registration.status;
+                      const paymentStatus = registration.paymentStatus;
+                      const rejectionReason = registration.rejectionReason;
+
+                      if (status === 'approved' || paymentStatus === 'APPROVED') {
+                        return (
+                          <button className="register-btn registered" disabled>
+                            Registered
+                          </button>
+                        );
+                      }
+
+                      if (status === 'rejected' || paymentStatus === 'REJECTED') {
+                        return (
+                          <div className="rejected-container">
+                            <div className="status-badge-container">
+                              <span className="rejected-badge">❌ Rejected</span>
+                              {rejectionReason && (
+                                <p className="rejection-reason-text">
+                                  Reason: {rejectionReason}
+                                </p>
+                              )}
+                            </div>
+                            <button
+                              onClick={() => handleRegisterClick(workshop)}
+                              className="register-btn re-register"
+                            >
+                              Register Again
+                            </button>
+                          </div>
+                        );
+                      }
+
+                      return (
+                        <button className="register-btn pending" disabled>
+                          Verification Pending
+                        </button>
+                      );
+                    })()}
                   </div>
                 </div>
               </div>

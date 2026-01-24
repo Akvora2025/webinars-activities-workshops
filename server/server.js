@@ -1,16 +1,17 @@
-import express from "express";
-import mongoose from "mongoose";
-import cors from "cors";
-import dotenv from "dotenv";
-import path from "path";
-import fs from "fs";
-import { fileURLToPath } from "url";
-import authRoutes from "./routes/auth.js";
-import userRoutes from "./routes/users.js";
-import adminRoutes from "./routes/admin.js";
-import eventRoutes from "./routes/events.js";
-import publicEventRoutes from "./routes/publicEvents.js";
-import registrationRoutes from "./routes/registrations.js";
+import express from 'express';
+import mongoose from 'mongoose';
+import cors from 'cors';
+import dotenv from 'dotenv';
+import path from 'path';
+import fs from 'fs';
+import { fileURLToPath } from 'url';
+import authRoutes from './routes/auth.js';
+import userRoutes from './routes/users.js';
+import adminRoutes from './routes/admin.js';
+import eventRoutes from './routes/events.js';
+import publicEventRoutes from './routes/publicEvents.js';
+import registrationRoutes from './routes/registrations.js';
+import reportRoutes from './routes/report.js';
 
 dotenv.config();
 
@@ -34,12 +35,13 @@ if (!fs.existsSync(uploadsDir)) {
 app.use("/uploads", express.static(uploadsDir));
 
 // Routes
-app.use("/api/auth", authRoutes);
-app.use("/api/users", userRoutes);
-app.use("/api/admin", adminRoutes);
-app.use("/api/events", eventRoutes);
-app.use("/api/public-events", publicEventRoutes);
-app.use("/api/registrations", registrationRoutes);
+app.use('/api/auth', authRoutes);
+app.use('/api/users', userRoutes);
+app.use('/api/admin', adminRoutes);
+app.use('/api/events', eventRoutes);
+app.use('/api/public-events', publicEventRoutes);
+app.use('/api/registrations', registrationRoutes);
+app.use('/api/report-issue', reportRoutes);
 
 // Health check
 app.get("/api/health", (req, res) => {

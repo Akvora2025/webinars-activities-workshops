@@ -159,12 +159,7 @@ export async function getProfile(req, res) {
         emailVerified: user.emailVerified,
         profileCompleted: user.profileCompleted,
         registeredYear: user.registeredYear,
-        authProvider: user.authProvider,
-        isBlocked: user.isBlocked || false,
-        isDeleted: user.isDeleted || false,
-        status: user.status || (user.isDeleted ? 'DELETED' : user.isBlocked ? 'BLOCKED' : 'ACTIVE'),
-        blockReason: user.blockReason || '',
-        blockedAt: user.blockedAt || null
+        authProvider: user.authProvider
       }
     });
   } catch (error) {

@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { useAuth, useUser } from '@clerk/clerk-react';
-import Navbar from '../components/Navbar';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 import './Internships.css';
@@ -69,7 +68,6 @@ function Internships() {
   if (loading) {
     return (
       <div>
-        <Navbar />
         <div className="events-loading">
           <div className="loading-spinner"></div>
           <p>Loading internships...</p>
@@ -80,7 +78,6 @@ function Internships() {
 
   return (
     <div>
-      <Navbar />
       <div className="events-container">
         <div className="events-header">
           <h1>Internships</h1>
@@ -100,8 +97,8 @@ function Internships() {
               <div key={internship._id} className="event-card">
                 <div className="event-image">
                   {internship.imageUrl ? (
-                    <img 
-                      src={`${API_URL.replace('/api', '')}${internship.imageUrl}`} 
+                    <img
+                      src={`${API_URL.replace('/api', '')}${internship.imageUrl}`}
                       alt={internship.title}
                       onClick={() => handleImageClick(`${API_URL.replace('/api', '')}${internship.imageUrl}`, internship.title)}
                       className="event-image-clickable"
@@ -112,7 +109,7 @@ function Internships() {
                     </div>
                   )}
                 </div>
-                
+
                 <div className="event-content">
                   <div className="event-header">
                     <h3>{internship.title}</h3>
@@ -120,9 +117,9 @@ function Internships() {
                       {internship.price === 0 ? 'Free' : `$${internship.price}`}
                     </span>
                   </div>
-                  
+
                   <p className="event-description">{internship.description}</p>
-                  
+
                   <div className="event-details">
                     <div className="event-detail">
                       <strong>Start Date:</strong> {new Date(internship.date).toLocaleDateString()}
@@ -150,7 +147,7 @@ function Internships() {
                   )}
 
                   <div className="event-actions">
-                    <button 
+                    <button
                       onClick={() => handleApply(internship._id)}
                       className="apply-btn"
                     >
@@ -163,7 +160,7 @@ function Internships() {
           </div>
         )}
       </div>
-      
+
       {previewImage && (
         <div className="image-preview-modal" onClick={closePreview}>
           <div className="preview-content" onClick={(e) => e.stopPropagation()}>

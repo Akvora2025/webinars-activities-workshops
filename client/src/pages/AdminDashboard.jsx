@@ -276,15 +276,33 @@ function AdminDashboard() {
 
   const handleUpdateRegistrationStatus = async (regId, status) => {
     try {
+      let rejectionReason = '';
+      if (status === 'rejected') {
+        rejectionReason = window.prompt('Please enter a rejection reason (e.g., Wrong UPI Reference Number):');
+        if (rejectionReason === null) return; // User cancelled
+        if (!rejectionReason.trim()) {
+          alert('Rejection reason is required');
+          return;
+        }
+      }
+
       const token = localStorage.getItem('adminToken');
-      const response = await axios.put(`${API_URL}/registrations/${regId}/status`, { status }, {
+      const response = await axios.put(`${API_URL}/registrations/${regId}/status`, {
+        status,
+        rejectionReason
+      }, {
         headers: { Authorization: `Bearer ${token}` }
       });
 
       if (response.data.success) {
         // Update local state
         setRegistrations(prev => prev.map(reg =>
-          reg._id === regId ? { ...reg, status } : reg
+          reg._id === regId ? {
+            ...reg,
+            status,
+            rejectionReason: response.data.registration.rejectionReason,
+            paymentStatus: response.data.registration.paymentStatus
+          } : reg
         ));
         // Refresh events as participant list might have changed
         fetchEvents();
@@ -305,26 +323,6 @@ function AdminDashboard() {
         <div className="admin-header-content">
           <h1>AKVORA Admin Dashboard</h1>
           <div className="admin-user-info">
-            <nav className="admin-nav">
-              <button
-                onClick={() => navigate('/admin/dashboard')}
-                className="nav-btn active"
-              >
-                Events
-              </button>
-              <button
-                onClick={() => navigate('/admin/users')}
-                className="nav-btn"
-              >
-                Users
-              </button>
-              <button
-                onClick={() => navigate('/admin/user-profiles')}
-                className="nav-btn"
-              >
-                User Profiles
-              </button>
-            </nav>
             <span>Admin</span>
             <button onClick={handleLogout} className="logout-btn">Logout</button>
           </div>
@@ -679,9 +677,16 @@ function AdminDashboard() {
                             <code>{reg.upiReference}</code>
                           </td>
                           <td>
-                            <span className={`status-badge ${reg.status}`}>
-                              {reg.status}
-                            </span>
+                            <div className="status-cell">
+                              <span className={`status-badge ${reg.status}`}>
+                                {reg.status}
+                              </span>
+                              {reg.status === 'rejected' && reg.rejectionReason && (
+                                <div className="rejection-reason" title={reg.rejectionReason}>
+                                  {reg.rejectionReason}
+                                </div>
+                              )}
+                            </div>
                           </td>
                           <td>
                             <div className="action-buttons">

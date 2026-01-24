@@ -1,30 +1,52 @@
 .placeholder-container {
-  max-width: 800px;
-  margin: 4rem auto;
-  padding: 0 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
   text-align: center;
+  padding: 2rem;
 }
 
-.placeholder-container h1 {
-  font-size: 3rem;
-  color: #333;
-  margin-bottom: 1rem;
+.placeholder-content {
+  max-width: 500px;
+  background-color: var(--card-bg);
+  padding: 3rem;
+  border-radius: 20px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+  border: 1px solid var(--border-color);
 }
 
-.placeholder-container > p {
+.placeholder-icon {
+  font-size: 4rem;
+  margin-bottom: 1.5rem;
+}
+
+.placeholder-content h1 {
   font-size: 2rem;
-  color: #667eea;
-  font-weight: bold;
+  color: var(--text-primary);
   margin-bottom: 1rem;
 }
 
-.placeholder-subtitle {
-  font-size: 1.2rem !important;
-  color: #666 !important;
-  font-weight: normal !important;
+.placeholder-content p {
+  color: var(--text-secondary);
+  font-size: 1.1rem;
+  margin-bottom: 2rem;
+  line-height: 1.6;
 }
 
+.back-btn {
+  background-color: var(--accent-color);
+  color: white;
+  border: none;
+  padding: 0.75rem 2rem;
+  border-radius: 10px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
 
-
-
-
+.back-btn:hover {
+  background-color: var(--accent-hover);
+  transform: translateY(-2px);
+}

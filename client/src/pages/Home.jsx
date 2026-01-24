@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@clerk/clerk-react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import Navbar from '../components/Navbar';
 import './Home.css';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
@@ -43,23 +42,20 @@ function Home() {
 
   if (loading) {
     return (
-      <div>
-        <Navbar />
-        <div className="home-container">
-          <div>Loading...</div>
-        </div>
+      <div className="home-loading">
+        <div className="loading-spinner"></div>
+        <p>Loading...</p>
       </div>
     );
   }
 
   return (
     <div>
-      <Navbar />
       <div className="home-container">
         <div className="home-content">
           <h1>Welcome to AKVORA</h1>
           <p>Your gateway to webinars, workshops, and internships.</p>
-          
+
           {!profileCompleted && (
             <div className="profile-prompt">
               <p>Please complete your profile to access all features.</p>

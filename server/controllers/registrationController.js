@@ -37,6 +37,23 @@ export async function registerForWorkshop(req, res) {
         });
 
         if (existingRegistration) {
+            // If the previous registration was rejected, allow re-registration
+            if (existingRegistration.paymentStatus === 'REJECTED') {
+                existingRegistration.upiReference = upiReference;
+                existingRegistration.status = 'pending';
+                existingRegistration.paymentStatus = 'PENDING';
+                existingRegistration.rejectionReason = '';
+                existingRegistration.rejectedAt = null;
+                existingRegistration.nameOnCertificate = nameOnCertificate;
+
+                await existingRegistration.save();
+
+                return res.status(200).json({
+                    success: true,
+                    message: 'Re-registration submitted successfully. Pending verification.',
+                    registration: existingRegistration
+                });
+            }
             return res.status(400).json({ error: 'You have already registered for this workshop' });
         }
 
@@ -52,7 +69,8 @@ export async function registerForWorkshop(req, res) {
             workshop: workshopId,
             nameOnCertificate,
             upiReference,
-            status: 'pending'
+            status: 'pending',
+            paymentStatus: 'PENDING'
         });
 
         res.status(201).json({
@@ -134,6 +152,20 @@ export async function updateRegistrationStatus(req, res) {
         }
 
         registration.status = status;
+
+        // Update paymentStatus based on status
+        if (status === 'approved') {
+            registration.paymentStatus = 'APPROVED';
+            registration.rejectionReason = '';
+            registration.rejectedAt = null;
+        } else if (status === 'rejected') {
+            registration.paymentStatus = 'REJECTED';
+            registration.rejectionReason = req.body.rejectionReason || adminMessage || 'Rejected by admin';
+            registration.rejectedAt = new Date();
+        } else if (status === 'pending') {
+            registration.paymentStatus = 'PENDING';
+        }
+
         if (adminMessage !== undefined) {
             registration.adminMessage = adminMessage;
         }
