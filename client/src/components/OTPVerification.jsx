@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import axios from 'axios';
+import api from '../services/api';
 import './OTPVerification.css';
+
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -13,7 +14,7 @@ function OTPVerification({ email, onVerify, onCancel }) {
 
   const handleInputChange = (index, value) => {
     if (value.length > 1) return;
-    
+
     const newOtp = [...otp];
     newOtp[index] = value;
     setOtp(newOtp);
@@ -45,9 +46,10 @@ function OTPVerification({ email, onVerify, onCancel }) {
   const sendOTP = async () => {
     setSending(true);
     setError('');
-    
+
     try {
-      const response = await axios.post(`${API_URL}/auth/verify-email`, { email });
+      const response = await api.post('/auth/verify-email', { email });
+
       if (response.data.success) {
         setOtpSent(true);
       }
@@ -60,7 +62,7 @@ function OTPVerification({ email, onVerify, onCancel }) {
 
   const verifyOTP = async () => {
     const otpCode = otp.join('');
-    
+
     if (otpCode.length !== 6) {
       setError('Please enter a 6-digit OTP');
       return;
@@ -70,10 +72,11 @@ function OTPVerification({ email, onVerify, onCancel }) {
     setError('');
 
     try {
-      const response = await axios.post(`${API_URL}/auth/verify-otp`, {
+      const response = await api.post('/auth/verify-otp', {
         email,
         otp: otpCode
       });
+
 
       if (response.data.success) {
         onVerify();
@@ -92,11 +95,11 @@ function OTPVerification({ email, onVerify, onCancel }) {
       <div className="otp-modal">
         <h2>Verify Your Email</h2>
         <p className="otp-email">We'll send a verification code to <strong>{email}</strong></p>
-        
+
         {!otpSent ? (
           <div className="otp-send-section">
-            <button 
-              onClick={sendOTP} 
+            <button
+              onClick={sendOTP}
               disabled={sending}
               className="send-otp-btn"
             >
@@ -122,18 +125,18 @@ function OTPVerification({ email, onVerify, onCancel }) {
                 />
               ))}
             </div>
-            
+
             {error && <div className="otp-error">{error}</div>}
-            
+
             <div className="otp-actions">
-              <button 
-                onClick={verifyOTP} 
+              <button
+                onClick={verifyOTP}
                 disabled={loading || otp.join('').length !== 6}
                 className="verify-otp-btn"
               >
                 {loading ? 'Verifying...' : 'Verify OTP'}
               </button>
-              <button 
+              <button
                 onClick={() => {
                   setOtpSent(false);
                   setOtp(['', '', '', '', '', '']);

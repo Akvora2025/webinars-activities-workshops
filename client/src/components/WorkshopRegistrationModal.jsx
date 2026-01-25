@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@clerk/clerk-react';
 import { QRCodeSVG } from 'qrcode.react';
-import axios from 'axios';
 import toast from 'react-hot-toast';
 import './WorkshopRegistrationModal.css';
+import api, { setAuthToken } from '../services/api';
 
 const API_URL = import.meta.env.VITE_API_URL;
+
 
 function WorkshopRegistrationModal({ workshop, onClose, onSuccess }) {
     const { getToken } = useAuth();
@@ -22,10 +23,10 @@ function WorkshopRegistrationModal({ workshop, onClose, onSuccess }) {
     const fetchProfile = async () => {
         try {
             const token = await getToken();
-            const response = await axios.get(`${API_URL}/users/profile`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            setAuthToken(token);
+            const response = await api.get('/users/profile');
             setProfile(response.data.user);
+
         } catch (error) {
             console.error('Failed to fetch profile:', error);
             toast.error('Failed to load your profile details');
@@ -51,13 +52,13 @@ function WorkshopRegistrationModal({ workshop, onClose, onSuccess }) {
         setSubmitting(true);
         try {
             const token = await getToken();
-            const response = await axios.post(`${API_URL}/registrations`, {
+            setAuthToken(token);
+            const response = await api.post('/registrations', {
                 workshopId: workshop._id,
                 nameOnCertificate: profile.certificateName || `${profile.firstName} ${profile.lastName}`,
                 upiReference
-            }, {
-                headers: { Authorization: `Bearer ${token}` }
             });
+
 
             if (response.data.success) {
                 toast.success(response.data.message);

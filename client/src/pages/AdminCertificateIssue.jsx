@@ -1,5 +1,4 @@
 import { useState, useRef } from 'react';
-import axios from 'axios';
 import toast from 'react-hot-toast';
 import {
     Upload,
@@ -12,8 +11,10 @@ import {
     Loader2,
     Type
 } from 'lucide-react';
+import api, { setAuthToken } from '../services/api';
 
 const API_URL = import.meta.env.VITE_API_URL;
+
 
 function AdminCertificateIssue() {
     const [selectedYear, setSelectedYear] = useState('2025');
@@ -38,10 +39,9 @@ function AdminCertificateIssue() {
 
         try {
             const token = localStorage.getItem('adminToken');
-            const response = await axios.post(`${API_URL}/certificates/check-user`,
-                { akvoraId },
-                { headers: { Authorization: `Bearer ${token}` } }
-            );
+            setAuthToken(token);
+            const response = await api.post('/certificates/check-user', { akvoraId });
+
 
             if (response.data.success) {
                 setSearchedUser(response.data.user);
@@ -72,12 +72,13 @@ function AdminCertificateIssue() {
 
         try {
             const token = localStorage.getItem('adminToken');
-            await axios.post(`${API_URL}/certificates/upload`, formData, {
+            setAuthToken(token);
+            await api.post('/certificates/upload', formData, {
                 headers: {
-                    'Content-Type': 'multipart/form-data',
-                    Authorization: `Bearer ${token}`
+                    'Content-Type': 'multipart/form-data'
                 }
             });
+
             setMessage('Certificate uploaded successfully!');
             setFile(null);
             setTitle('');

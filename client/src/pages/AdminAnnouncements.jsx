@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
 import { Plus, Edit2, Trash2, Clock, CheckCircle, XCircle } from 'lucide-react';
 import './AdminAnnouncements.css';
+import api, { setAuthToken } from '../services/api';
 
 const API_URL = import.meta.env.VITE_API_URL;
+
 
 function AdminAnnouncements() {
     const [announcements, setAnnouncements] = useState([]);
@@ -32,10 +33,10 @@ function AdminAnnouncements() {
     const fetchAnnouncements = async () => {
         try {
             const token = localStorage.getItem('adminToken');
-            const response = await axios.get(`${API_URL}/announcements`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            setAuthToken(token);
+            const response = await api.get('/announcements');
             setAnnouncements(response.data.announcements);
+
         } catch (error) {
             console.error('Error fetching announcements:', error);
         } finally {
@@ -49,20 +50,14 @@ function AdminAnnouncements() {
 
         try {
             const token = localStorage.getItem('adminToken');
+            setAuthToken(token);
 
             if (editingId) {
-                await axios.put(
-                    `${API_URL}/announcements/${editingId}`,
-                    formData,
-                    { headers: { Authorization: `Bearer ${token}` } }
-                );
+                await api.put(`/announcements/${editingId}`, formData);
             } else {
-                await axios.post(
-                    `${API_URL}/announcements`,
-                    formData,
-                    { headers: { Authorization: `Bearer ${token}` } }
-                );
+                await api.post('/announcements', formData);
             }
+
 
             setShowForm(false);
             setEditingId(null);
@@ -92,10 +87,10 @@ function AdminAnnouncements() {
 
         try {
             const token = localStorage.getItem('adminToken');
-            await axios.delete(`${API_URL}/announcements/${id}`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            setAuthToken(token);
+            await api.delete(`/announcements/${id}`);
             fetchAnnouncements();
+
         } catch (error) {
             console.error('Error deleting announcement:', error);
             alert('Failed to delete announcement');

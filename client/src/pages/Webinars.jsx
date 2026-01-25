@@ -1,12 +1,12 @@
 import { useState, useEffect } from 'react';
 import { SignIn as ClerkSignIn, useAuth, useUser } from '@clerk/clerk-react';
-import axios from 'axios';
 import toast from 'react-hot-toast';
 import { calculateEventStatus, getStatusLabel } from '../utils/eventStatus';
 import './Webinars.css';
-
+import api, { setAuthToken } from '../services/api';
 
 const API_URL = import.meta.env.VITE_API_URL;
+
 
 function Webinars() {
   const [webinars, setWebinars] = useState([]);
@@ -22,8 +22,9 @@ function Webinars() {
 
   const fetchWebinars = async () => {
     try {
-      const response = await axios.get(`${API_URL}/public-events?type=webinar`);
+      const response = await api.get('/public-events?type=webinar');
       setWebinars(response.data.events);
+
     } catch (error) {
       setError('Failed to fetch webinars');
     } finally {
@@ -39,15 +40,13 @@ function Webinars() {
 
     try {
       const token = await getToken();
-      const response = await axios.post(`${API_URL}/events/${webinarId}/register`, {
+      setAuthToken(token);
+      const response = await api.post(`/events/${webinarId}/register`, {
         userId: user.id,
         userEmail: user.primaryEmailAddress?.emailAddress || user.emailAddresses[0]?.emailAddress,
         userName: `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'User'
-      }, {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
       });
+
 
       if (response.data.success) {
         toast.success(response.data.message);
@@ -100,11 +99,12 @@ function Webinars() {
                 <div className="event-image">
                   {webinar.imageUrl ? (
                     <img
-                      src={`${API_URL.replace('/api', '')}${webinar.imageUrl}`}
+                      src={`${API_URL?.replace('/api', '')}${webinar.imageUrl}`}
                       alt={webinar.title}
-                      onClick={() => handleImageClick(`${API_URL.replace('/api', '')}${webinar.imageUrl}`, webinar.title)}
+                      onClick={() => handleImageClick(`${API_URL?.replace('/api', '')}${webinar.imageUrl}`, webinar.title)}
                       className="event-image-clickable"
                     />
+
                   ) : (
                     <div className="event-placeholder">
                       <div className="event-type-badge webinar">Webinar</div>

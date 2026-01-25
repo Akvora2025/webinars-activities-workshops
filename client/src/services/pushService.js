@@ -1,6 +1,7 @@
-import axios from 'axios';
+import api, { setAuthToken } from './api';
 
 const API_URL = import.meta.env.VITE_API_URL;
+
 
 class PushService {
     constructor() {
@@ -34,7 +35,8 @@ class PushService {
         if (this.vapidPublicKey) return this.vapidPublicKey;
 
         try {
-            const response = await axios.get(`${API_URL}/push/vapid-public-key`);
+            const response = await api.get('/push/vapid-public-key');
+
             this.vapidPublicKey = response.data.publicKey;
             return this.vapidPublicKey;
         } catch (error) {
@@ -86,19 +88,16 @@ class PushService {
             this.subscription = subscription;
 
             // Send subscription to server
-            await axios.post(
-                `${API_URL}/push/subscribe`,
+            setAuthToken(token);
+            await api.post(
+                '/push/subscribe',
                 {
                     subscription: subscription.toJSON(),
                     userAgent: navigator.userAgent,
                     deviceInfo: this.getDeviceInfo()
-                },
-                {
-                    headers: {
-                        Authorization: `Bearer ${token}`
-                    }
                 }
             );
+
 
             console.log('Push subscription successful');
             return subscription;
@@ -120,15 +119,12 @@ class PushService {
                 await this.subscription.unsubscribe();
 
                 // Notify server
-                await axios.post(
-                    `${API_URL}/push/unsubscribe`,
-                    { endpoint: this.subscription.endpoint },
-                    {
-                        headers: {
-                            Authorization: `Bearer ${token}`
-                        }
-                    }
+                setAuthToken(token);
+                await api.post(
+                    '/push/unsubscribe',
+                    { endpoint: this.subscription.endpoint }
                 );
+
 
                 this.subscription = null;
                 console.log('Push unsubscription successful');

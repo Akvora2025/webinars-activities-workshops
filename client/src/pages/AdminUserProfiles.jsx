@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
 import { UserCheck, Mail, Phone, Calendar, Search, X, Filter, SortAsc, RefreshCcw } from 'lucide-react';
 import './AdminUsers.css'; // Reusing base styles
+import api, { setAuthToken } from '../services/api';
 
 const API_URL = import.meta.env.VITE_API_URL;
+
 
 function AdminUserProfiles() {
     const [profiles, setProfiles] = useState([]);
@@ -37,12 +38,12 @@ function AdminUserProfiles() {
         try {
             setLoading(true);
             const token = localStorage.getItem('adminToken');
-            const response = await axios.get(`${API_URL}/admin/user-profiles`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            setAuthToken(token);
+            const response = await api.get('/admin/user-profiles');
             if (response.data.success) {
                 setProfiles(response.data.profiles);
             }
+
         } catch (error) {
             console.error('Failed to fetch user profiles:', error);
         } finally {

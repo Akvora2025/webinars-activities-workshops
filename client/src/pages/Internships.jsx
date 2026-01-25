@@ -1,12 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useAuth, useUser } from '@clerk/clerk-react';
-import axios from 'axios';
 import toast from 'react-hot-toast';
 import { calculateEventStatus, getStatusLabel } from '../utils/eventStatus';
 import './Internships.css';
-
+import api, { setAuthToken } from '../services/api';
 
 const API_URL = import.meta.env.VITE_API_URL;
+
 
 function Internships() {
   const [internships, setInternships] = useState([]);
@@ -22,8 +22,9 @@ function Internships() {
 
   const fetchInternships = async () => {
     try {
-      const response = await axios.get(`${API_URL}/public-events?type=internship`);
+      const response = await api.get('/public-events?type=internship');
       setInternships(response.data.events);
+
     } catch (error) {
       setError('Failed to fetch internships');
     } finally {
@@ -39,15 +40,13 @@ function Internships() {
 
     try {
       const token = await getToken();
-      const response = await axios.post(`${API_URL}/events/${internshipId}/register`, {
+      setAuthToken(token);
+      const response = await api.post(`/events/${internshipId}/register`, {
         userId: user.id,
         userEmail: user.primaryEmailAddress?.emailAddress || user.emailAddresses[0]?.emailAddress,
         userName: `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'User'
-      }, {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
       });
+
 
       if (response.data.success) {
         toast.success(response.data.message);
@@ -100,11 +99,12 @@ function Internships() {
                 <div className="event-image">
                   {internship.imageUrl ? (
                     <img
-                      src={`${API_URL.replace('/api', '')}${internship.imageUrl}`}
+                      src={`${API_URL?.replace('/api', '')}${internship.imageUrl}`}
                       alt={internship.title}
-                      onClick={() => handleImageClick(`${API_URL.replace('/api', '')}${internship.imageUrl}`, internship.title)}
+                      onClick={() => handleImageClick(`${API_URL?.replace('/api', '')}${internship.imageUrl}`, internship.title)}
                       className="event-image-clickable"
                     />
+
                   ) : (
                     <div className="event-placeholder">
                       <div className="event-type-badge internship">Internship</div>

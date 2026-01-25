@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import { useAuth, useUser } from '@clerk/clerk-react';
-import axios from 'axios';
 import toast from 'react-hot-toast';
 import { Send, Loader2 } from 'lucide-react';
 import './ReportIssue.css';
+import api, { setAuthToken } from '../services/api';
 
 const API_URL = import.meta.env.VITE_API_URL;
+
 
 function ReportIssue() {
     const [issue, setIssue] = useState('');
@@ -24,14 +25,11 @@ function ReportIssue() {
         setLoading(true);
         try {
             const token = await getToken();
-            const response = await axios.post(`${API_URL}/report-issue`,
-                { issue: issue.trim() },
-                {
-                    headers: {
-                        Authorization: `Bearer ${token}`
-                    }
-                }
+            setAuthToken(token);
+            const response = await api.post('/report-issue',
+                { issue: issue.trim() }
             );
+
 
             if (response.data.success) {
                 toast.success('Your issue has been sent to the Akvora team.');

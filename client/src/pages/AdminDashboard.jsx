@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import axios from 'axios';
 import { calculateEventStatus, getStatusLabel } from '../utils/eventStatus';
 import './AdminDashboard.css';
-
+import api, { setAuthToken } from '../services/api';
 
 const API_URL = import.meta.env.VITE_API_URL;
+
 
 const toLocalISOString = (date) => {
   if (!date) return '';
@@ -77,13 +77,11 @@ function AdminDashboard() {
   const fetchEvents = async () => {
     try {
       const token = localStorage.getItem('adminToken');
+      setAuthToken(token);
       // Pass status query param based on activeTab
-      const response = await axios.get(`${API_URL}/events?status=${activeTab}`, {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      });
+      const response = await api.get(`/events?status=${activeTab}`);
       setEvents(response.data.events);
+
     } catch (error) {
       setError('Failed to fetch events');
     } finally {
@@ -94,12 +92,10 @@ function AdminDashboard() {
   const fetchStats = async () => {
     try {
       const token = localStorage.getItem('adminToken');
-      const response = await axios.get(`${API_URL}/events/stats/dashboard`, {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      });
+      setAuthToken(token);
+      const response = await api.get('/events/stats/dashboard');
       setStats(response.data.stats);
+
     } catch (error) {
       console.error('Failed to fetch stats:', error);
     }
@@ -147,18 +143,19 @@ function AdminDashboard() {
 
       let response;
       if (editingEvent) {
-        response = await axios.put(`${API_URL}/events/${editingEvent._id}`, formDataToSend, {
+        response = await api.put(`/events/${editingEvent._id}`, formDataToSend, {
           headers: {
-            Authorization: `Bearer ${token}`
+            'Content-Type': 'multipart/form-data'
           }
         });
       } else {
-        response = await axios.post(`${API_URL}/events`, formDataToSend, {
+        response = await api.post('/events', formDataToSend, {
           headers: {
-            Authorization: `Bearer ${token}`
+            'Content-Type': 'multipart/form-data'
           }
         });
       }
+
 
       setShowCreateForm(false);
       setEditingEvent(null);
@@ -231,12 +228,10 @@ function AdminDashboard() {
 
     try {
       const token = localStorage.getItem('adminToken');
-      await axios.delete(`${API_URL}/events/${eventId}`, {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      });
+      setAuthToken(token);
+      await api.delete(`/events/${eventId}`);
       fetchEvents();
+
       fetchStats();
     } catch (error) {
       setError('Failed to delete event');
@@ -286,10 +281,10 @@ function AdminDashboard() {
     setShowRegistrationsModal(true);
     try {
       const token = localStorage.getItem('adminToken');
-      const response = await axios.get(`${API_URL}/registrations/event/${workshop._id}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      setAuthToken(token);
+      const response = await api.get(`/registrations/event/${workshop._id}`);
       setRegistrations(response.data.registrations);
+
     } catch (error) {
       console.error('Failed to fetch registrations:', error);
       setError('Failed to fetch registrations');
@@ -311,12 +306,12 @@ function AdminDashboard() {
       }
 
       const token = localStorage.getItem('adminToken');
-      const response = await axios.put(`${API_URL}/registrations/${regId}/status`, {
+      setAuthToken(token);
+      const response = await api.put(`/registrations/${regId}/status`, {
         status,
         rejectionReason
-      }, {
-        headers: { Authorization: `Bearer ${token}` }
       });
+
 
       if (response.data.success) {
         // Update local state
