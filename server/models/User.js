@@ -59,6 +59,18 @@ const userSchema = new mongoose.Schema({
   password: {
     type: String,
     default: ''
+  },
+  authProvider: {
+    type: String,
+    default: 'clerk' // Default to clerk for existing users, 'email' for manual registration
+  },
+  isBlocked: {
+    type: Boolean,
+    default: false
+  },
+  isDeleted: {
+    type: Boolean,
+    default: false
   }
 }, {
   timestamps: true

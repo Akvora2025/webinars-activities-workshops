@@ -16,10 +16,10 @@ export async function sendOTP(req, res) {
 
     // Generate 6-digit OTP
     const otp = crypto.randomInt(100000, 999999).toString();
-    
+
     // Hash the OTP before storing
     const hashedOTP = await bcrypt.hash(otp, 10);
-    
+
     // Set expiry to 10 minutes from now
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
 
@@ -37,8 +37,8 @@ export async function sendOTP(req, res) {
     // Send OTP email
     await sendOTPEmail(email, otp);
 
-    res.json({ 
-      success: true, 
+    res.json({
+      success: true,
       message: 'OTP sent to email',
       expiresIn: 600 // 10 minutes in seconds
     });
@@ -81,9 +81,9 @@ export async function verifyOTP(req, res) {
     otpRecord.verified = true;
     await otpRecord.save();
 
-    res.json({ 
-      success: true, 
-      message: 'Email verified successfully' 
+    res.json({
+      success: true,
+      message: 'Email verified successfully'
     });
   } catch (error) {
     console.error('Verify OTP error:', error);

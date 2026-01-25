@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react';
 import { Search, Sun, Moon, LogOut } from 'lucide-react';
 import { SignOutButton, useUser } from '@clerk/clerk-react';
+import { useDbUser } from '../contexts/UserContext';
 import NotificationIcon from './NotificationIcon';
 import './Header.css';
 
 function Header() {
     const { user } = useUser();
+    const { isBlocked } = useDbUser();
     const [theme, setTheme] = useState(localStorage.getItem('theme') || 'light');
 
     useEffect(() => {
@@ -19,17 +21,19 @@ function Header() {
 
     return (
         <header className="header">
-            <div className="header-search">
-                <Search size={18} className="search-icon" />
-                <input type="text" placeholder="Search workshops, webinars..." />
-            </div>
+            {!isBlocked ? (
+                <div className="header-search">
+                    <Search size={18} className="search-icon" />
+                    <input type="text" placeholder="Search workshops, webinars..." />
+                </div>
+            ) : <div className="header-search-empty" />}
 
             <div className="header-actions">
                 <button className="icon-btn theme-toggle" onClick={toggleTheme} title="Toggle Theme">
                     {theme === 'light' ? <Moon size={20} /> : <Sun size={20} />}
                 </button>
 
-                <NotificationIcon />
+                {!isBlocked && <NotificationIcon />}
 
                 <div className="header-divider" />
 

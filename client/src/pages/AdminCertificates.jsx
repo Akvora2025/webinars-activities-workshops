@@ -27,6 +27,9 @@ function AdminCertificates() {
                     <button onClick={() => navigate('/admin/dashboard')} className="admin-nav-btn">
                         Dashboard
                     </button>
+                    <button onClick={() => navigate('/admin/users')} className="admin-nav-btn">
+                        Users
+                    </button>
                     <button onClick={() => navigate('/admin/videos')} className="admin-nav-btn">
                         Videos
                     </button>

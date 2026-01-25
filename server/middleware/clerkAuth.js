@@ -3,8 +3,10 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
+import User from '../models/User.js';
+
 // Initialize Clerk client with secret key
-const clerk = createClerkClient({
+export const clerk = createClerkClient({
   secretKey: process.env.CLERK_SECRET_KEY
 });
 
@@ -51,6 +53,20 @@ export async function clerkMiddleware(req, res, next) {
         req.clerkId = userId;
         req.user = { userId }; // Add for consistency
         req.clerkEmail = sessionClaims.email || null;
+      }
+
+      // Check if user is blocked or deleted in MongoDB
+      if (req.clerkId) {
+        const dbUser = await User.findOne({ clerkId: req.clerkId });
+        if (dbUser) {
+          if (dbUser.isBlocked) {
+            req.isBlocked = true; // Attach blocked status
+            // Do not return 403 here, let specific routes handle or allow profile access
+          }
+          if (dbUser.isDeleted) {
+            return res.status(403).json({ error: 'Your account has been deleted.' });
+          }
+        }
       }
 
       next();

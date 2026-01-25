@@ -1,5 +1,6 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@clerk/clerk-react';
+import { useDbUser } from './contexts/UserContext';
 import { Toaster } from 'react-hot-toast';
 import SignIn from './pages/SignIn';
 import SignUp from './pages/SignUp';
@@ -12,6 +13,8 @@ import AdminLogin from './pages/AdminLogin';
 import AdminDashboard from './pages/AdminDashboard';
 import AdminEventDetail from './pages/AdminEventDetail';
 import AdminVideos from './pages/AdminVideos';
+import AdminUsers from './pages/AdminUsers';
+import AdminUserProfiles from './pages/AdminUserProfiles';
 import AdminAnnouncements from './pages/AdminAnnouncements';
 import AdminCertificates from './pages/AdminCertificates';
 import AdminCertificateIssue from './pages/AdminCertificateIssue';
@@ -26,14 +29,21 @@ import Participated from './pages/Participated';
 
 
 function ProtectedRoute({ children }) {
-  const { isLoaded, isSignedIn } = useAuth();
+  const { isLoaded: authLoaded, isSignedIn } = useAuth();
+  const { isBlocked, loading: dbLoading } = useDbUser();
+  const location = useLocation();
 
-  if (!isLoaded) {
+  if (!authLoaded || dbLoading) {
     return <div>Loading...</div>;
   }
 
   if (!isSignedIn) {
     return <Navigate to="/sign-in" replace />;
+  }
+
+  // If user is blocked, they can only access the /profile page
+  if (isBlocked && location.pathname !== '/profile') {
+    return <Navigate to="/profile" replace />;
   }
 
   return children;
@@ -56,6 +66,8 @@ function App() {
         <Route path="/admin/events" element={<Navigate to="/admin/dashboard" replace />} />
         <Route path="/admin/events/:id" element={<AdminEventDetail />} />
         <Route path="/admin/videos" element={<AdminVideos />} />
+        <Route path="/admin/users" element={<AdminUsers />} />
+        <Route path="/admin/user-profiles" element={<AdminUserProfiles />} />
         <Route path="/admin/announcements" element={<AdminAnnouncements />} />
         <Route path="/admin/announcements" element={<AdminAnnouncements />} />
 

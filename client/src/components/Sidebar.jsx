@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import { useUser } from '@clerk/clerk-react';
+import { useDbUser } from '../contexts/UserContext';
 import {
     LayoutDashboard,
     UserCircle,
@@ -31,6 +32,8 @@ const menuItems = [
 
 const adminItems = [
     { path: '/admin/dashboard', name: 'Admin Dashboard', icon: LayoutDashboard },
+    { path: '/admin/users', name: 'Users', icon: UserCircle },
+    { path: '/admin/user-profiles', name: 'User Profiles', icon: UserCircle },
     { path: '/admin/announcements', name: 'Announcements', icon: MessageSquare },
     { path: '/admin/certificates', name: 'Certificates', icon: Award },
 ];
@@ -41,8 +44,14 @@ const helpItems = [
 
 function Sidebar({ isExpanded, setIsExpanded }) {
     const { user } = useUser();
+    const { isBlocked } = useDbUser();
     // Strict role-based check
     const isAdmin = user?.role === 'admin';
+
+    // Filter menu items based on block status
+    const visibleMenuItems = isBlocked
+        ? menuItems.filter(item => item.path === '/profile')
+        : menuItems;
 
     return (
         <motion.aside
@@ -72,7 +81,7 @@ function Sidebar({ isExpanded, setIsExpanded }) {
 
             <nav className="sidebar-nav">
                 <div className="nav-section">
-                    {menuItems.map((item) => (
+                    {visibleMenuItems.map((item) => (
                         <NavLink
                             key={item.path}
                             to={item.path}
@@ -127,30 +136,32 @@ function Sidebar({ isExpanded, setIsExpanded }) {
                     </div>
                 )}
 
-                <div className="nav-section">
-                    {helpItems.map((item) => (
-                        <NavLink
-                            key={item.path}
-                            to={item.path}
-                            className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
-                        >
-                            <item.icon size={22} className="nav-icon" />
-                            <AnimatePresence>
-                                {isExpanded && (
-                                    <motion.span
-                                        initial={{ opacity: 0, x: -10 }}
-                                        animate={{ opacity: 1, x: 0 }}
-                                        exit={{ opacity: 0, x: -10 }}
-                                        className="nav-text"
-                                    >
-                                        {item.name}
-                                    </motion.span>
-                                )}
-                            </AnimatePresence>
-                            {isExpanded && <ChevronRight size={16} className="arrow-icon" />}
-                        </NavLink>
-                    ))}
-                </div>
+                {!isBlocked && (
+                    <div className="nav-section">
+                        {helpItems.map((item) => (
+                            <NavLink
+                                key={item.path}
+                                to={item.path}
+                                className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
+                            >
+                                <item.icon size={22} className="nav-icon" />
+                                <AnimatePresence>
+                                    {isExpanded && (
+                                        <motion.span
+                                            initial={{ opacity: 0, x: -10 }}
+                                            animate={{ opacity: 1, x: 0 }}
+                                            exit={{ opacity: 0, x: -10 }}
+                                            className="nav-text"
+                                        >
+                                            {item.name}
+                                        </motion.span>
+                                    )}
+                                </AnimatePresence>
+                                {isExpanded && <ChevronRight size={16} className="arrow-icon" />}
+                            </NavLink>
+                        ))}
+                    </div>
+                )}
             </nav>
 
             {user && (

@@ -1,6 +1,7 @@
 import User from '../models/User.js';
 import OTP from '../models/OTP.js';
 import { generateAkvoraId } from '../utils/akvoraIdGenerator.js';
+import bcrypt from 'bcryptjs';
 
 /**
  * Create or update user profile
@@ -90,11 +91,6 @@ export async function createOrUpdateProfile(req, res) {
 
 /**
  * Get user profile
- */
-import bcrypt from 'bcryptjs';
-
-/**
- * Get user profile
  * Automatically creates user in MongoDB if they exist in Clerk but not in DB
  */
 export async function getProfile(req, res) {
@@ -159,7 +155,8 @@ export async function getProfile(req, res) {
         emailVerified: user.emailVerified,
         profileCompleted: user.profileCompleted,
         registeredYear: user.registeredYear,
-        authProvider: user.authProvider
+        authProvider: user.authProvider,
+        isBlocked: user.isBlocked // Return blocking status to frontend
       }
     });
   } catch (error) {
