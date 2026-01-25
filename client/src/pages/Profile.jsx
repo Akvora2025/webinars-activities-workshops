@@ -6,7 +6,7 @@ import Cropper from 'react-easy-crop';
 import { useDbUser } from '../contexts/UserContext';
 import './Profile.css';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+const API_URL = import.meta.env.VITE_API_URL;
 
 function Profile() {
     const { user } = useUser();

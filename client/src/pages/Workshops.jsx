@@ -7,7 +7,7 @@ import WorkshopRegistrationModal from '../components/WorkshopRegistrationModal';
 import { calculateEventStatus, getStatusLabel } from '../utils/eventStatus';
 import './Workshops.css';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+const API_URL = import.meta.env.VITE_API_URL;
 
 function Workshops() {
   const [workshops, setWorkshops] = useState([]);

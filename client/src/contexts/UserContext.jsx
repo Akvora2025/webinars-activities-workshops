@@ -1,10 +1,9 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import { useAuth, useUser } from '@clerk/clerk-react';
-import axios from 'axios';
+import api, { setAuthToken } from '../services/api';
 
 const UserContext = createContext();
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
 export function UserProvider({ children }) {
     const { isSignedIn, isLoaded: authLoaded, getToken } = useAuth();
@@ -22,12 +21,12 @@ export function UserProvider({ children }) {
 
         try {
             const token = await getToken();
-            const response = await axios.get(`${API_URL}/users/profile`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            setAuthToken(token); // Set the token globally for the api instance
+            const response = await api.get('/users/profile');
             if (response.data.success) {
                 setDbUser(response.data.user);
             }
+
         } catch (err) {
             console.error('Error fetching DB user:', err);
             if (err.response?.status === 403 && err.response?.data?.isBlocked) {

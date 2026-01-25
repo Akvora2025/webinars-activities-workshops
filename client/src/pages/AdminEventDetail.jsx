@@ -6,7 +6,7 @@ import { Upload, X, CheckCircle, Loader2, Type, AlertCircle } from 'lucide-react
 import { calculateEventStatus, getStatusLabel } from '../utils/eventStatus';
 import './AdminEventDetail.css';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+const API_URL = import.meta.env.VITE_API_URL;
 
 function AdminEventDetail() {
     const { id } = useParams();

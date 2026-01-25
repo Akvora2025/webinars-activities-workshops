@@ -4,7 +4,7 @@ import axios from 'axios';
 import { Plus, Edit2, Trash2, Clock, CheckCircle, XCircle } from 'lucide-react';
 import './AdminAnnouncements.css';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+const API_URL = import.meta.env.VITE_API_URL;
 
 function AdminAnnouncements() {
     const [announcements, setAnnouncements] = useState([]);

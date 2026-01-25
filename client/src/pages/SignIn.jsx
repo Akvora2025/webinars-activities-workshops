@@ -5,7 +5,7 @@ import OTPVerification from '../components/OTPVerification';
 import axios from 'axios';
 import './SignIn.css';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+const API_URL = import.meta.env.VITE_API_URL;
 
 function SignIn() {
   const { isSignedIn, userId, getToken } = useAuth();

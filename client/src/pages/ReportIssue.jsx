@@ -5,7 +5,7 @@ import toast from 'react-hot-toast';
 import { Send, Loader2 } from 'lucide-react';
 import './ReportIssue.css';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+const API_URL = import.meta.env.VITE_API_URL;
 
 function ReportIssue() {
     const [issue, setIssue] = useState('');

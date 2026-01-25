@@ -4,7 +4,7 @@ import axios from 'axios';
 import { UserCheck, Mail, Phone, Calendar, Search, X, Filter, SortAsc, RefreshCcw } from 'lucide-react';
 import './AdminUsers.css'; // Reusing base styles
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+const API_URL = import.meta.env.VITE_API_URL;
 
 function AdminUserProfiles() {
     const [profiles, setProfiles] = useState([]);

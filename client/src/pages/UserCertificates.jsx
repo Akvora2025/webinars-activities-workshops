@@ -4,7 +4,7 @@ import { useAuth } from '@clerk/clerk-react';
 import { Download, Award, Calendar, Eye, Search, X } from 'lucide-react';
 import './UserCertificates.css';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+const API_URL = import.meta.env.VITE_API_URL;
 
 function UserCertificates() {
     const [certificates, setCertificates] = useState([]);

@@ -14,7 +14,7 @@ import {
 import socketService from '../services/socketService';
 import './NotificationIcon.css';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+const API_URL = import.meta.env.VITE_API_URL;
 
 function NotificationIcon() {
     const { getToken, userId } = useAuth();

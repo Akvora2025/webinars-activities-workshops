@@ -51,7 +51,7 @@ const DashboardCarousel = ({ items }) => {
     const currentItem = items[currentIndex];
 
     const getAPIUrl = () => {
-        return import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+        return import.meta.env.VITE_API_URL;
     };
 
     const bannerImageUrl = currentItem.bannerImage

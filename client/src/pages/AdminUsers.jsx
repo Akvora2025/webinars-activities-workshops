@@ -5,7 +5,7 @@ import { Shield, ShieldAlert, Trash2, Unlock, Lock, Search, X, Filter, SortAsc, 
 import { toast } from 'react-hot-toast';
 import './AdminUsers.css';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+const API_URL = import.meta.env.VITE_API_URL;
 
 function AdminUsers() {
     const [users, setUsers] = useState([]);
