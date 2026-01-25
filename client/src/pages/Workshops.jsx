@@ -5,9 +5,7 @@ import toast from 'react-hot-toast';
 import WorkshopRegistrationModal from '../components/WorkshopRegistrationModal';
 import { calculateEventStatus, getStatusLabel } from '../utils/eventStatus';
 import './Workshops.css';
-import api, { setAuthToken } from '../services/api';
-
-const API_URL = import.meta.env.VITE_API_URL;
+import api, { setAuthToken, API_URL } from '../services/api';
 
 
 function Workshops() {

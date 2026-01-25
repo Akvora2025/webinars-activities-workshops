@@ -2,9 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { calculateEventStatus, getStatusLabel } from '../utils/eventStatus';
 import './AdminDashboard.css';
-import api, { setAuthToken } from '../services/api';
-
-const API_URL = import.meta.env.VITE_API_URL;
+import api, { setAuthToken, API_URL } from '../services/api';
 
 
 const toLocalISOString = (date) => {

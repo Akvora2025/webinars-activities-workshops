@@ -3,9 +3,7 @@ import { SignIn as ClerkSignIn, useAuth, useUser } from '@clerk/clerk-react';
 import toast from 'react-hot-toast';
 import { calculateEventStatus, getStatusLabel } from '../utils/eventStatus';
 import './Webinars.css';
-import api, { setAuthToken } from '../services/api';
-
-const API_URL = import.meta.env.VITE_API_URL;
+import api, { setAuthToken, API_URL } from '../services/api';
 
 
 function Webinars() {

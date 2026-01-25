@@ -3,9 +3,7 @@ import { useAuth } from '@clerk/clerk-react';
 import { QRCodeSVG } from 'qrcode.react';
 import toast from 'react-hot-toast';
 import './WorkshopRegistrationModal.css';
-import api, { setAuthToken } from '../services/api';
-
-const API_URL = import.meta.env.VITE_API_URL;
+import api, { setAuthToken, API_URL } from '../services/api';
 
 
 function WorkshopRegistrationModal({ workshop, onClose, onSuccess }) {

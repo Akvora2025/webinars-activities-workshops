@@ -4,9 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import Cropper from 'react-easy-crop';
 import { useDbUser } from '../contexts/UserContext';
 import './Profile.css';
-import api, { setAuthToken } from '../services/api';
-
-const API_URL = import.meta.env.VITE_API_URL;
+import api, { setAuthToken, API_URL } from '../services/api';
 
 
 function Profile() {
