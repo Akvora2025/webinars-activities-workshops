@@ -43,15 +43,49 @@ const upload = multer({
 
 
 
+// Custom upload middleware to handle errors
+const uploadMiddleware = (req, res, next) => {
+  upload.single('eventImage')(req, res, (err) => {
+    if (err instanceof multer.MulterError) {
+      if (err.code === 'LIMIT_FILE_SIZE') {
+        return res.status(400).json({ error: 'File too large. Max size is 5MB' });
+      }
+      return res.status(400).json({ error: `Upload error: ${err.message}` });
+    } else if (err) {
+      return res.status(400).json({ error: err.message });
+    }
+    next();
+  });
+};
+
+// Helper to parse list fields from FormData
+const parseListField = (field) => {
+  if (!field) return [];
+  if (Array.isArray(field)) return field;
+  // If it's a string containing commas (for tags) or just a string
+  return field.split(',').map(item => item.trim()).filter(item => item);
+};
+
 // Admin routes (all require admin authentication)
 
 // Create new event
-router.post('/', adminAuth, upload.single('eventImage'), async (req, res) => {
+router.post('/', adminAuth, uploadMiddleware, async (req, res) => {
   try {
     const eventData = {
       ...req.body,
       createdBy: req.admin.userId
     };
+
+    // Handle list fields that might come as strings from FormData
+    if (typeof req.body.tags === 'string') {
+      eventData.tags = parseListField(req.body.tags);
+    }
+    if (typeof req.body.requirements === 'string') {
+      eventData.requirements = parseListField(req.body.requirements);
+    }
+    if (typeof req.body.whatYouWillLearn === 'string') {
+      eventData.whatYouWillLearn = parseListField(req.body.whatYouWillLearn);
+    }
 
     // Add image URL if image was uploaded
     if (req.file) {
@@ -77,13 +111,24 @@ router.get('/', adminAuth, async (req, res) => {
   try {
     const { type, status } = req.query;
     const filter = {};
+    const now = new Date();
 
     if (type) filter.type = type;
-    if (status) filter.status = status;
+
+    // Filter by calculated status based on dates
+    if (status) {
+      if (status === 'completed') {
+        // Event is completed if endDate is in the past
+        filter.endDate = { $lt: now };
+      } else if (status === 'active') {
+        // Event is active (upcoming or ongoing) if endDate is in the future
+        filter.endDate = { $gte: now };
+      }
+    }
 
     const events = await Event.find(filter)
       .populate('createdBy', 'firstName lastName email')
-      .sort({ date: 1 });
+      .sort({ date: status === 'completed' ? -1 : 1 }); // Sort completed by newest first, active by soonest first
 
     res.json({
       success: true,
@@ -116,7 +161,7 @@ router.get('/:id', adminAuth, async (req, res) => {
 });
 
 // Update event
-router.put('/:id', adminAuth, upload.single('eventImage'), async (req, res) => {
+router.put('/:id', adminAuth, uploadMiddleware, async (req, res) => {
   try {
     const event = await Event.findById(req.params.id);
 
@@ -130,6 +175,17 @@ router.put('/:id', adminAuth, upload.single('eventImage'), async (req, res) => {
     }
 
     const updateData = { ...req.body };
+
+    // Handle list fields
+    if (typeof req.body.tags === 'string') {
+      updateData.tags = parseListField(req.body.tags);
+    }
+    if (typeof req.body.requirements === 'string') {
+      updateData.requirements = parseListField(req.body.requirements);
+    }
+    if (typeof req.body.whatYouWillLearn === 'string') {
+      updateData.whatYouWillLearn = parseListField(req.body.whatYouWillLearn);
+    }
 
     // Add image URL if new image was uploaded
     if (req.file) {
@@ -274,7 +330,7 @@ router.get('/stats/dashboard', adminAuth, async (req, res) => {
         $group: {
           _id: '$type',
           count: { $sum: 1 },
-          totalParticipants: { $sum: '$currentParticipants' },
+          totalParticipants: { $sum: { $size: '$participants' } },
           upcoming: {
             $sum: {
               $cond: [{ $gt: ['$date', now] }, 1, 0]
@@ -287,7 +343,12 @@ router.get('/stats/dashboard', adminAuth, async (req, res) => {
 
     const totalEvents = await Event.countDocuments();
     const totalParticipants = await Event.aggregate([
-      { $group: { _id: null, total: { $sum: '$currentParticipants' } } }
+      {
+        $group: {
+          _id: null,
+          total: { $sum: { $size: '$participants' } }
+        }
+      }
     ]);
 
     res.json({

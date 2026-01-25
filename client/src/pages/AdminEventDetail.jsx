@@ -337,7 +337,11 @@ function AdminEventDetail() {
                                                 </div>
                                             </td>
                                             <td><code>{reg.upiReference}</code></td>
-                                            <td><span className={`status-badge ${reg.status}`}>{reg.status}</span></td>
+                                            <td>
+                                                <span className={`admin-status-badge ${(reg.status || reg.paymentStatus || 'pending').toLowerCase()}`}>
+                                                    {reg.status || reg.paymentStatus || 'Pending'}
+                                                </span>
+                                            </td>
                                             <td>
                                                 <div className="action-buttons">
                                                     {reg.status === 'pending' && (

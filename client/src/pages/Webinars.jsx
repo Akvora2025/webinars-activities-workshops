@@ -175,9 +175,22 @@ function Webinars() {
                         );
                       } else if (isRegistered) {
                         return (
-                          <button className="register-btn registered" disabled>
-                            ✓ Registered
-                          </button>
+                          <div className="registered-actions" style={{ display: 'flex', gap: '10px' }}>
+                            <button className="register-btn registered" disabled>
+                              ✓ Registered
+                            </button>
+                            {webinar.meetingLink && (
+                              <a
+                                href={webinar.meetingLink}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="register-btn"
+                                style={{ textDecoration: 'none', textAlign: 'center', background: '#4f46e5' }}
+                              >
+                                Join Meeting
+                              </a>
+                            )}
+                          </div>
                         );
                       } else {
                         return (

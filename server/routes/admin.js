@@ -19,9 +19,9 @@ router.post('/login', async (req, res) => {
     const defaultAdminPassword = 'admin123';
 
     // Find admin user
-    let adminUser = await User.findOne({ 
-      email: adminEmail, 
-      role: 'admin' 
+    let adminUser = await User.findOne({
+      email: adminEmail,
+      role: 'admin'
     });
 
     // If admin user doesn't exist, create it
@@ -63,10 +63,10 @@ router.post('/login', async (req, res) => {
 
     // Generate JWT token
     const token = jwt.sign(
-      { 
-        userId: adminUser._id, 
-        email: adminUser.email, 
-        role: adminUser.role 
+      {
+        userId: adminUser._id,
+        email: adminUser.email,
+        role: adminUser.role
       },
       process.env.JWT_SECRET || 'fallback-secret-key',
       { expiresIn: '24h' }

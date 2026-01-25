@@ -63,15 +63,37 @@ export async function registerForWorkshop(req, res) {
             return res.status(400).json({ error: 'This UPI reference number has already been used' });
         }
 
+        // Check if Workshop is free (price is 0 or null)
+        const isFree = !workshop.price || workshop.price === 0;
+        const initialStatus = isFree ? 'approved' : 'pending';
+        const initialPaymentStatus = isFree ? 'APPROVED' : 'PENDING';
+
         // Create new registration
         const registration = await WorkshopRegistration.create({
             user: user._id,
             workshop: workshopId,
             nameOnCertificate,
-            upiReference,
-            status: 'pending',
-            paymentStatus: 'PENDING'
+            upiReference: isFree ? `FREE-${Date.now()}` : upiReference, // Generate dummy Ref for free events
+            status: initialStatus,
+            paymentStatus: initialPaymentStatus
         });
+
+        // If free/approved, add to Event's participants list immediately
+        if (isFree) {
+            const isAlreadyParticipant = workshop.participants.some(
+                p => p.userId === user.clerkId
+            );
+
+            if (!isAlreadyParticipant) {
+                workshop.participants.push({
+                    userId: user.clerkId,
+                    email: user.email,
+                    name: `${user.firstName} ${user.lastName}`,
+                    registeredAt: new Date()
+                });
+                await workshop.save();
+            }
+        }
 
         res.status(201).json({
             success: true,
@@ -265,4 +287,97 @@ export async function updateRegistrationStatus(req, res) {
         res.status(500).json({ error: 'Failed to update registration status' });
     }
 }
+
+/**
+ * Get user participation history (Webinars, Workshops, Internships)
+ */
+export async function getUserParticipationHistory(req, res) {
+    try {
+        const { clerkId } = req;
+        const user = await User.findOne({ clerkId });
+
+        if (!user) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        // 1. Get Workshop Registrations (from WorkshopRegistration model)
+        const workshopRegistrations = await WorkshopRegistration.find({ user: user._id })
+            .populate('workshop', 'title type date endDate status imageUrl instructor')
+            .sort({ createdAt: -1 });
+
+        const workshops = workshopRegistrations.map(reg => {
+            // Map status for frontend display
+            let displayStatus = 'Registered';
+            if (reg.status === 'approved') displayStatus = 'Approved';
+            else if (reg.status === 'rejected') displayStatus = 'Rejected';
+            else if (reg.status === 'pending') displayStatus = 'Pending';
+
+            return {
+                id: reg.workshop?._id,
+                title: reg.workshop?.title,
+                type: 'workshop',
+                status: displayStatus,
+                date: reg.workshop?.date,
+                endDate: reg.workshop?.endDate,
+                imageUrl: reg.workshop?.imageUrl,
+                instructor: reg.workshop?.instructor, // Include instructor
+                registrationStatus: reg.status
+            };
+        });
+
+        // 2. Get Events Participation (Webinars, Internships)
+        // Find events where the user is in the participants array
+        const events = await Event.find({
+            'participants.userId': clerkId,
+            type: { $in: ['webinar', 'internship'] }
+        }).select('title type date endDate status imageUrl participants instructor').sort({ date: -1 });
+
+        const webinars = [];
+        const internships = [];
+        const now = new Date();
+
+        events.forEach(event => {
+            // Find specific participant record
+            const participant = event.participants.find(p => p.userId === clerkId);
+
+            // Determine status based on dates
+            let status = 'Registered';
+            if (event.endDate && new Date(event.endDate) < now) {
+                status = 'Completed';
+            }
+
+            const item = {
+                id: event._id,
+                title: event.title,
+                type: event.type,
+                status: status,
+                date: event.date,
+                endDate: event.endDate,
+                imageUrl: event.imageUrl,
+                instructor: event.instructor, // Include instructor
+                registeredAt: participant ? participant.registeredAt : null
+            };
+
+            if (event.type === 'webinar') {
+                webinars.push(item);
+            } else if (event.type === 'internship') {
+                internships.push(item);
+            }
+        });
+
+        res.json({
+            success: true,
+            history: {
+                workshops,
+                webinars,
+                internships
+            }
+        });
+
+    } catch (error) {
+        console.error('Get participation history error:', error);
+        res.status(500).json({ error: 'Failed to fetch participation history' });
+    }
+}
+
 

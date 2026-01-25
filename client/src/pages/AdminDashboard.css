@@ -229,7 +229,7 @@
 
 .event-header {
   display: flex;
-  justify-content: space-between;
+  flex-direction: column;
   align-items: flex-start;
   margin-bottom: 1rem;
 }
@@ -240,6 +240,7 @@
   font-weight: 600;
   margin: 0;
   line-height: 1.4;
+  width: 100%;
 }
 
 .event-type {
@@ -258,6 +259,36 @@
 .event-type.webinar {
   background: #fce7f3;
   color: #a21caf;
+}
+
+.event-badges-stack {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.event-status-badge {
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.event-status-badge.upcoming {
+  background: #e0f2fe;
+  color: #0369a1;
+}
+
+.event-status-badge.ongoing {
+  background: #f0fdf4;
+  color: #15803d;
+  border: 1px solid #86efac;
+}
+
+.event-status-badge.completed {
+  background: #f3f4f6;
+  color: #4b5563;
 }
 
 .event-type.internship {

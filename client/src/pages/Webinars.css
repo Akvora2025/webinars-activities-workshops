@@ -42,8 +42,13 @@
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 .error-message {
@@ -129,18 +134,31 @@
 
 .event-header {
   display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
+  flex-direction: column;
+  gap: 0.75rem;
   margin-bottom: 1rem;
 }
 
 .event-header h3 {
   color: #1a202c;
   font-size: 1.25rem;
-  font-weight: 600;
+  font-weight: 700;
   margin: 0;
   line-height: 1.4;
-  flex: 1;
+  /* Line clamping for title */
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  width: 100%;
+}
+
+.event-badges {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
 }
 
 .event-price {
@@ -150,7 +168,7 @@
   border-radius: 20px;
   font-size: 0.875rem;
   font-weight: 600;
-  margin-left: 1rem;
+  /* Removed margin-left as we use gap now */
 }
 
 .event-description {
@@ -297,31 +315,31 @@
   .events-container {
     padding: 1rem;
   }
-  
+
   .events-header h1 {
     font-size: 2rem;
   }
-  
+
   .events-grid {
     grid-template-columns: 1fr;
     gap: 1.5rem;
   }
-  
+
   .event-header {
     flex-direction: column;
     align-items: flex-start;
   }
-  
+
   .event-price {
     margin-left: 0;
     margin-top: 0.5rem;
   }
-  
+
   .event-detail {
     flex-direction: column;
     align-items: flex-start;
   }
-  
+
   .event-detail strong {
     min-width: auto;
     margin-right: 0;

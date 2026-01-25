@@ -52,6 +52,7 @@ function AdminDashboard() {
   const [registrations, setRegistrations] = useState([]);
   const [selectedWorkshopForReg, setSelectedWorkshopForReg] = useState(null);
   const [loadingRegistrations, setLoadingRegistrations] = useState(false);
+  const [activeTab, setActiveTab] = useState('active'); // 'active' or 'completed'
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -71,12 +72,13 @@ function AdminDashboard() {
       // Clean up the state so it doesn't re-open on refresh
       window.history.replaceState({}, document.title);
     }
-  }, [navigate]);
+  }, [navigate, activeTab]);
 
   const fetchEvents = async () => {
     try {
       const token = localStorage.getItem('adminToken');
-      const response = await axios.get(`${API_URL}/events`, {
+      // Pass status query param based on activeTab
+      const response = await axios.get(`${API_URL}/events?status=${activeTab}`, {
         headers: {
           Authorization: `Bearer ${token}`
         }
@@ -116,11 +118,15 @@ function AdminDashboard() {
 
       // Add all form fields
       Object.keys(formData).forEach(key => {
-        if (key !== 'imageUrl') {
+        if (key !== 'imageUrl' && formData[key] !== null && formData[key] !== undefined) {
           if (key === 'tags') {
-            formDataToSend.append(key, formData[key].split(',').map(tag => tag.trim()).filter(tag => tag));
+            // Split tags by comma and append each as separate field
+            const tags = formData[key].split(',').map(tag => tag.trim()).filter(tag => tag);
+            tags.forEach(tag => formDataToSend.append('tags', tag));
           } else if (key === 'requirements' || key === 'whatYouWillLearn') {
-            formDataToSend.append(key, formData[key].split('\n').map(item => item.trim()).filter(item => item));
+            // Split by newline and append each as separate field
+            const items = formData[key].split('\n').map(item => item.trim()).filter(item => item);
+            items.forEach(item => formDataToSend.append(key, item));
           } else if (key === 'date' || key === 'endDate') {
             if (formData[key]) {
               formDataToSend.append(key, new Date(formData[key]).toISOString());
@@ -128,7 +134,6 @@ function AdminDashboard() {
           } else {
             formDataToSend.append(key, formData[key]);
           }
-
         }
       });
 
@@ -137,19 +142,20 @@ function AdminDashboard() {
         formDataToSend.append('eventImage', selectedImage);
       }
 
+      // NOTE: Do NOT manually set Content-Type to multipart/form-data.
+      // Axios/Browser will set it automatically with the correct boundary.
+
       let response;
       if (editingEvent) {
         response = await axios.put(`${API_URL}/events/${editingEvent._id}`, formDataToSend, {
           headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'multipart/form-data'
+            Authorization: `Bearer ${token}`
           }
         });
       } else {
         response = await axios.post(`${API_URL}/events`, formDataToSend, {
           headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'multipart/form-data'
+            Authorization: `Bearer ${token}`
           }
         });
       }
@@ -160,6 +166,7 @@ function AdminDashboard() {
       fetchEvents();
       fetchStats();
     } catch (error) {
+      console.error('Save event error:', error);
       setError(error.response?.data?.error || 'Failed to save event');
     } finally {
       setLoading(false);
@@ -394,50 +401,114 @@ function AdminDashboard() {
           </div>
         )}
 
+        <div className="admin-tabs">
+          <button
+            className={`tab-btn ${activeTab === 'active' ? 'active' : ''}`}
+            onClick={() => setActiveTab('active')}
+          >
+            Active Events
+          </button>
+          <button
+            className={`tab-btn ${activeTab === 'completed' ? 'active' : ''}`}
+            onClick={() => setActiveTab('completed')}
+          >
+            Completed Events
+          </button>
+        </div>
 
         <div className="events-section">
           <div className="section-header">
-            <h2>Events Management</h2>
-            <button
-              onClick={() => {
-                setShowCreateForm(true);
-                setEditingEvent(null);
-                resetForm();
-              }}
-              className="create-btn"
-            >
-              Create New Event
-            </button>
-          </div>
-
-          <div className="events-grid">
-            {events.map((event) => (
-              <div
-                key={event._id}
-                className="event-card-clickable"
-                onClick={() => navigate(`/admin/events/${event._id}`)}
+            <h2>{activeTab === 'active' ? 'Active Events' : 'Completed Events'}</h2>
+            {activeTab === 'active' && (
+              <button
+                onClick={() => {
+                  setShowCreateForm(true);
+                  setEditingEvent(null);
+                  resetForm();
+                }}
+                className="create-btn"
               >
-                <div className="event-header">
-                  <h3>{event.title}</h3>
-                  <span className={`event-type ${event.type}`}>{event.type}</span>
-                </div>
-                <div className="event-details">
-                  <p><strong>Date:</strong> {new Date(event.date).toLocaleDateString()}</p>
-                  <p><strong>End Date:</strong> {event.endDate ? new Date(event.endDate).toLocaleDateString() : 'Not Set'}</p>
-                  <p><strong>Instructor:</strong> {event.instructor}</p>
-                  <p><strong>Participants:</strong> {event.participants?.length || 0} registered</p>
-                  <p><strong>Status:</strong> {getStatusLabel(calculateEventStatus(event.date, event.endDate))}</p>
-
-                  {event.type === 'workshop' && (
-                    <p><strong>UPI:</strong> {event.upiId || 'Not set'}</p>
-                  )}
-                </div>
-                <div className="event-card-footer">
-                  <span className="view-details-hint">Click to manage event →</span>
-                </div>
-              </div>
-            ))}
+                Create New Event
+              </button>
+            )}
           </div>
+
+          {activeTab === 'active' ? (
+            <div className="events-grid">
+              {events.map((event) => (
+                <div
+                  key={event._id}
+                  className="event-card-clickable"
+                  onClick={() => navigate(`/admin/events/${event._id}`)}
+                >
+                  <div className="event-header">
+                    <div className="event-badges-stack">
+                      <span className={`event-type ${event.type}`}>{event.type}</span>
+                      <span className={`event-status-badge ${calculateEventStatus(event.date, event.endDate)}`}>
+                        {getStatusLabel(calculateEventStatus(event.date, event.endDate))}
+                      </span>
+                    </div>
+                    <h3>{event.title}</h3>
+                  </div>
+                  <div className="event-details">
+                    <p><strong>Date:</strong> {new Date(event.date).toLocaleDateString()}</p>
+                    <p><strong>End Date:</strong> {event.endDate ? new Date(event.endDate).toLocaleDateString() : 'Not Set'}</p>
+                    <p><strong>Instructor:</strong> {event.instructor}</p>
+                    <p><strong>Participants:</strong> {event.participants?.length || 0} registered</p>
+
+                    {event.type === 'workshop' && (
+                      <p><strong>UPI:</strong> {event.upiId || 'Not set'}</p>
+                    )}
+                  </div>
+                  <div className="event-card-footer">
+                    <span className="view-details-hint">Click to manage event →</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            /* Completed Events Table View */
+            <div className="table-responsive">
+              {events.length === 0 ? (
+                <p className="no-events">No completed events found.</p>
+              ) : (
+                <table className="registrations-table">
+                  <thead>
+                    <tr>
+                      <th>Event Details</th>
+                      <th>Instructor</th>
+                      <th>Participants</th>
+                      <th>Completed On</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {events.map(event => (
+                      <tr key={event._id}>
+                        <td>
+                          <div className="student-info">
+                            <strong>{event.title}</strong>
+                            <span style={{ fontSize: '0.75rem', textTransform: 'uppercase' }}>{event.type}</span>
+                          </div>
+                        </td>
+                        <td>{event.instructor}</td>
+                        <td>{event.participants?.length || 0}</td>
+                        <td>{new Date(event.endDate).toLocaleDateString()}</td>
+                        <td>
+                          <button
+                            className="delete-btn"
+                            onClick={(e) => { e.stopPropagation(); handleDelete(event._id); }}
+                          >
+                            Delete
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
+          )}
         </div>
       </main>
 

@@ -5,7 +5,8 @@ import {
     registerForWorkshop,
     getMyRegistrations,
     getWorkshopRegistrations,
-    updateRegistrationStatus
+    updateRegistrationStatus,
+    getUserParticipationHistory
 } from '../controllers/registrationController.js';
 
 const router = express.Router();
@@ -13,6 +14,7 @@ const router = express.Router();
 // User routes
 router.post('/', clerkMiddleware, registerForWorkshop);
 router.get('/my', clerkMiddleware, getMyRegistrations);
+router.get('/history', clerkMiddleware, getUserParticipationHistory);
 
 // Admin routes
 router.get('/event/:workshopId', adminAuth, getWorkshopRegistrations);

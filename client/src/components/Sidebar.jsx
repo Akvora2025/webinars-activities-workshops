@@ -12,7 +12,8 @@ import {
     AlertCircle,
     MessageSquare,
     ChevronRight,
-    Search
+    Search,
+    Clock
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import './Sidebar.css';
@@ -23,6 +24,7 @@ const menuItems = [
     { path: '/workshops', name: 'Workshops', icon: BookOpen },
     { path: '/webinars', name: 'Webinars', icon: MonitorPlay },
     { path: '/internships', name: 'Internships', icon: Briefcase },
+    { path: '/participated', name: 'Participated', icon: Clock },
     { path: '/certificates', name: 'Certificates', icon: Award },
     { path: '/videos', name: 'Videos', icon: Video },
 ];

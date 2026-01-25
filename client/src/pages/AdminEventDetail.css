@@ -183,7 +183,7 @@
     vertical-align: middle;
 }
 
-.status-badge {
+.admin-status-badge {
     padding: 0.35rem 0.85rem;
     border-radius: 6px;
     font-size: 0.75rem;
@@ -191,19 +191,19 @@
     display: inline-block;
 }
 
-.status-badge.pending {
+.admin-status-badge.pending {
     background: #fffbeb;
     color: #b45309;
     border: 1px solid #fcd34d;
 }
 
-.status-badge.approved {
+.admin-status-badge.approved {
     background: #ecfdf5;
     color: #047857;
     border: 1px solid #6ee7b7;
 }
 
-.status-badge.rejected {
+.admin-status-badge.rejected {
     background: #fef2f2;
     color: #b91c1c;
     border: 1px solid #fca5a5;

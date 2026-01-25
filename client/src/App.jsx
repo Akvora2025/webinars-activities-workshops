@@ -22,6 +22,7 @@ import Placeholder from './pages/Placeholder';
 import ReportIssue from './pages/ReportIssue';
 import Dashboard from './pages/Dashboard';
 import Videos from './pages/Videos';
+import Participated from './pages/Participated';
 
 
 function ProtectedRoute({ children }) {
@@ -138,6 +139,14 @@ function App() {
           element={
             <ProtectedRoute>
               <Layout><Placeholder title="Ask Support" /></Layout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/participated"
+          element={
+            <ProtectedRoute>
+              <Layout><Participated /></Layout>
             </ProtectedRoute>
           }
         />
