@@ -1,6 +1,7 @@
 .app-layout {
     display: flex;
-    min-height: 100vh;
+    height: 100vh;
+    overflow: hidden;
     background-color: var(--main-bg);
 }
 
@@ -9,6 +10,8 @@
     display: flex;
     flex-direction: column;
     min-width: 0;
+    height: 100%;
+    overflow: hidden;
     transition: margin-left var(--transition-speed) ease;
 }
 
@@ -16,6 +19,9 @@
     padding: 2rem;
     flex: 1;
     overflow-y: auto;
+    height: 100%;
+    scrollbar-width: thin;
+    scrollbar-color: var(--accent-hover) transparent;
 }
 
 .sidebar-overlay {
