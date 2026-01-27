@@ -27,11 +27,8 @@ function Webinars() {
   const fetchMyRegistrations = async () => {
     try {
       const token = await getToken();
-      const response = await axios.get(`${API_URL}/registrations/history`, {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      });
+      setAuthToken(token);
+      const response = await api.get(`/registrations/history`);
       if (response.data.success) {
         setMyRegistrations(response.data.history.webinars || []);
       }
@@ -67,14 +64,11 @@ function Webinars() {
     // Free event - Auto register using unified endpoint
     try {
       const token = await getToken();
-      const response = await axios.post(`${API_URL}/registrations`, {
+      setAuthToken(token);
+      const response = await api.post(`/registrations`, {
         workshopId: webinar._id,
         nameOnCertificate: `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'User',
         upiReference: 'FREE-WEBINAR' // Dummy ref for validation pass (controller handles proper ID)
-      }, {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
       });
 
 
