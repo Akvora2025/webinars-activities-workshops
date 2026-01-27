@@ -145,7 +145,7 @@ function Webinars() {
                       </span>
 
                       <span className="event-price">
-                        {webinar.price === 0 ? 'Free' : `$${webinar.price}`}
+                        {webinar.price == 0 ? 'Free' : `$${webinar.price}`}
                       </span>
                     </div>
                   </div>

@@ -56,9 +56,37 @@ const corsOptions = {
   optionsSuccessStatus: 204
 };
 
-// Socket.IO setup with CORS
+// Socket.IO setup with production-ready CORS and transport configuration
 const io = new Server(httpServer, {
-  cors: corsOptions
+  cors: {
+    origin: (origin, callback) => {
+      // Allow requests with no origin (like mobile apps or curl requests)
+      if (!origin) return callback(null, true);
+
+      if (allowedOrigins.indexOf(origin) !== -1) {
+        callback(null, true);
+      } else {
+        console.warn(`Blocked by CORS (Socket.IO): Attempted access from ${origin}`);
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
+    credentials: true,
+    methods: ['GET', 'POST']
+  },
+  // Critical for Render: Start with polling, upgrade to WebSocket
+  transports: ['polling', 'websocket'],
+  // Allow both transports
+  allowUpgrades: true,
+  // Increase timeout for slow connections
+  pingTimeout: 60000,
+  pingInterval: 25000,
+  // Handle proxies (Render uses proxies)
+  path: '/socket.io/',
+  // Connection state recovery (Socket.IO v4.6+)
+  connectionStateRecovery: {
+    maxDisconnectionDuration: 2 * 60 * 1000,
+    skipMiddlewares: true,
+  }
 });
 
 // Middleware
