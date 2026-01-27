@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@clerk/clerk-react';
 import { QRCodeSVG } from 'qrcode.react';
 import toast from 'react-hot-toast';
+import api, { setAuthToken } from '../services/api';
 import './EventRegistrationModal.css';
 
 
@@ -49,7 +50,8 @@ function EventRegistrationModal({ event, onClose, onSuccess }) {
         setSubmitting(true);
         try {
             const token = await getToken();
-            const response = await axios.post(`${API_URL}/registrations`, {
+            setAuthToken(token);
+            const response = await api.post(`/registrations`, {
                 workshopId: event._id, // Sending event._id as workshopId for backend compatibility
                 nameOnCertificate: profile.certificateName || `${profile.firstName} ${profile.lastName}`,
                 upiReference
