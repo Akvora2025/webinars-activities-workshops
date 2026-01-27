@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { SignIn as ClerkSignIn, useAuth, useUser } from '@clerk/clerk-react';
 import toast from 'react-hot-toast';
+import EventRegistrationModal from '../components/EventRegistrationModal';
 import { calculateEventStatus, getStatusLabel } from '../utils/eventStatus';
-import { useSocket } from '../context/SocketContext';
 import './Webinars.css';
 import api, { setAuthToken, API_URL } from '../services/api';
 
@@ -13,9 +13,9 @@ function Webinars() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [previewImage, setPreviewImage] = useState(null);
+  const [selectedWebinar, setSelectedWebinar] = useState(null);
   const { isSignedIn, user } = useUser();
   const { getToken } = useAuth();
-  const socket = useSocket();
 
   useEffect(() => {
     fetchWebinars();
@@ -23,47 +23,6 @@ function Webinars() {
       fetchMyRegistrations();
     }
   }, [isSignedIn]);
-
-  // Listen for real-time updates
-  useEffect(() => {
-    if (!socket) return;
-
-    const handleStatusUpdate = (data) => {
-      // Update myRegistrations with new status
-      setMyRegistrations(prev => {
-        const existing = prev.find(r => r.id === data.eventId);
-        if (existing) {
-          return prev.map(r => r.id === data.eventId ? {
-            ...r,
-            registrationStatus: data.status,
-            meetingLink: data.meetingLink
-          } : r);
-        } else {
-          // If it's a new registration that wasn't in the list yet (rare race condition but possible)
-          // We might need to fetch again or just add it if we had full event data
-          // Ideally we fetchMyRegistrations again to be safe and get full object
-          fetchMyRegistrations();
-          return prev;
-        }
-      });
-
-      // Also update the main webinars list to reflect participant count if needed
-      // (Though participant count usually comes from fetchWebinars)
-      fetchWebinars();
-
-      if (data.status === 'approved') {
-        toast.success('Your registration has been approved!');
-      } else if (data.status === 'rejected') {
-        toast.error(`Registration rejected: ${data.rejectionReason || 'Contact support'}`);
-      }
-    };
-
-    socket.on('registration:status-updated', handleStatusUpdate);
-
-    return () => {
-      socket.off('registration:status-updated', handleStatusUpdate);
-    };
-  }, [socket]);
 
   const fetchMyRegistrations = async () => {
     try {
@@ -93,25 +52,34 @@ function Webinars() {
     }
   };
 
-  const handleRegister = async (webinarId) => {
+  const handleRegister = async (webinar) => {
     if (!isSignedIn) {
       toast.error('Please sign in to register for webinars');
       return;
     }
 
+    // If paid event, show modal
+    if (webinar.price > 0) {
+      setSelectedWebinar(webinar);
+      return;
+    }
+
+    // Free event - Auto register using unified endpoint
     try {
       const token = await getToken();
-      setAuthToken(token);
-      const response = await api.post(`/events/${webinarId}/register`, {
-        userId: user.id,
-        userEmail: user.primaryEmailAddress?.emailAddress || user.emailAddresses[0]?.emailAddress,
-        userName: `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'User'
+      const response = await axios.post(`${API_URL}/registrations`, {
+        workshopId: webinar._id,
+        nameOnCertificate: `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'User',
+        upiReference: 'FREE-WEBINAR' // Dummy ref for validation pass (controller handles proper ID)
+      }, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
       });
 
 
       if (response.data.success) {
         toast.success(response.data.message);
-        // Refresh webinars to update participant count
         fetchWebinars();
         fetchMyRegistrations();
       }
@@ -222,14 +190,16 @@ function Webinars() {
 
                   <div className="event-actions">
                     {(() => {
-                      const isRegistered = webinar.participants?.some(
+                      // Check our participation history first (source of truth for pending/paid)
+                      const myRegistration = myRegistrations.find(r => r.id === webinar._id);
+
+                      // Also check the public participant list (fallback for legacy/free auto-approved)
+                      const isInParticipantList = webinar.participants?.some(
                         participant => participant.userId === user?.id
                       );
 
-                      // Check if we have the meeting link and status in myRegistrations
-                      const myRegistration = myRegistrations.find(r => r.id === webinar._id);
-                      const meetingLink = myRegistration?.meetingLink;
-                      const registrationStatus = myRegistration?.registrationStatus || (isRegistered ? 'approved' : null);
+                      const registrationStatus = myRegistration?.registrationStatus || (isInParticipantList ? 'approved' : null);
+                      const meetingLink = myRegistration?.meetingLink || webinar.meetingLink;
 
                       if (!isSignedIn) {
                         return (
@@ -240,7 +210,9 @@ function Webinars() {
                             Sign In to Register
                           </button>
                         );
-                      } else if (isRegistered) {
+                      }
+
+                      if (registrationStatus) {
                         if (registrationStatus === 'pending') {
                           return (
                             <button className="register-btn pending" disabled style={{ background: '#f59e0b', cursor: 'not-allowed' }}>
@@ -249,6 +221,26 @@ function Webinars() {
                           );
                         }
 
+                        if (registrationStatus === 'rejected') {
+                          return (
+                            <div className="rejected-container" style={{ display: 'flex', flexDirection: 'column', gap: '8px', width: '100%' }}>
+                              {myRegistration.rejectionReason && (
+                                <p style={{ color: '#ef4444', fontSize: '13px', margin: 0, textAlign: 'center', background: 'rgba(239, 68, 68, 0.1)', padding: '6px', borderRadius: '4px' }}>
+                                  Reason: {myRegistration.rejectionReason}
+                                </p>
+                              )}
+                              <button
+                                className="register-btn"
+                                onClick={() => handleRegister(webinar)}
+                                style={{ background: '#ef4444' }}
+                              >
+                                Register Again
+                              </button>
+                            </div>
+                          );
+                        }
+
+                        // Approved / Registered
                         return (
                           <div className="registered-actions" style={{ display: 'flex', gap: '10px' }}>
                             <button className="register-btn registered" disabled>
@@ -265,7 +257,7 @@ function Webinars() {
                                 Join Meeting
                               </a>
                             ) : (
-                              // Fallback if meeting link is not yet available (e.g. pending approval for paid events)
+                              // Fallback if meeting link is not yet available but user is approved (e.g. legacy or not yet added to event)
                               webinar.meetingLink && registrationStatus === 'approved' && (
                                 <a
                                   href={webinar.meetingLink}
@@ -284,7 +276,7 @@ function Webinars() {
                         return (
                           <button
                             className="register-btn"
-                            onClick={() => handleRegister(webinar._id)}
+                            onClick={() => handleRegister(webinar)}
                           >
                             Register Now
                           </button>
@@ -307,6 +299,18 @@ function Webinars() {
             <p className="preview-title">{previewImage.title}</p>
           </div>
         </div>
+      )}
+
+      {selectedWebinar && (
+        <EventRegistrationModal
+          event={selectedWebinar}
+          onClose={() => setSelectedWebinar(null)}
+          onSuccess={() => {
+            fetchWebinars();
+            if (isSignedIn) fetchMyRegistrations();
+            setSelectedWebinar(null);
+          }}
+        />
       )}
     </div>
   );

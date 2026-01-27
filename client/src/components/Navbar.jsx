@@ -21,8 +21,11 @@ function Navbar() {
       <div className="navbar-container">
         <Link to="/" className="navbar-brand">
           <img src="/akvora-logo.png" alt="Akvora" className="navbar-logo" />
-          <span>Aravind</span>
+          <span>Akvora</span>
         </Link>
+<<<<<<< HEAD
+        <div className="navbar-menu">
+=======
 
         {/* Hamburger Menu Button */}
         <button
@@ -36,6 +39,7 @@ function Navbar() {
         </button>
 
         <div className={`navbar-menu ${mobileMenuOpen ? 'mobile-open' : ''}`}>
+>>>>>>> a0c10d88807905c0a69c0a8579a92bfe309345fe
           <Link
             to="/webinars"
             className={location.pathname === '/webinars' ? 'active' : ''}
