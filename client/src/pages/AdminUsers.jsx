@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
 import { Shield, ShieldAlert, Trash2, Unlock, Lock, Search, X, Filter, SortAsc, RefreshCcw, UserCheck, UserPlus } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import './AdminUsers.css';
+import api, { setAuthToken } from '../services/api';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+const API_URL = import.meta.env.VITE_API_URL;
+
 
 function AdminUsers() {
     const [users, setUsers] = useState([]);
@@ -35,15 +36,14 @@ function AdminUsers() {
         }
         fetchUsers();
     }, [navigate]);
-
     const fetchUsers = async () => {
         try {
             setLoading(true);
             const token = localStorage.getItem('adminToken');
-            const response = await axios.get(`${API_URL}/admin/users`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            setAuthToken(token);
+            const response = await api.get('/admin/users');
             setUsers(response.data);
+
         } catch (error) {
             console.error('Failed to fetch users:', error);
             toast.error('Failed to load users');
@@ -57,9 +57,9 @@ function AdminUsers() {
 
         try {
             const token = localStorage.getItem('adminToken');
-            await axios.put(`${API_URL}/admin/users/${userId}/block`, {}, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            setAuthToken(token);
+            await api.put(`/admin/users/${userId}/block`, {});
+
             toast.success('User blocked successfully');
             fetchUsers();
         } catch (error) {
@@ -73,9 +73,9 @@ function AdminUsers() {
 
         try {
             const token = localStorage.getItem('adminToken');
-            await axios.put(`${API_URL}/admin/users/${userId}/unblock`, {}, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            setAuthToken(token);
+            await api.put(`/admin/users/${userId}/unblock`, {});
+
             toast.success('User unblocked successfully');
             fetchUsers();
         } catch (error) {
@@ -89,9 +89,9 @@ function AdminUsers() {
 
         try {
             const token = localStorage.getItem('adminToken');
-            await axios.delete(`${API_URL}/admin/users/${userId}`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            setAuthToken(token);
+            await api.delete(`/admin/users/${userId}`);
+
             toast.success('User deleted successfully');
             fetchUsers();
         } catch (error) {

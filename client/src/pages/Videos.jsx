@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../services/api';
 import './Videos.css';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+
+const API_URL = import.meta.env.VITE_API_URL;
 
 function Videos() {
     const [videos, setVideos] = useState([]);
@@ -16,8 +17,9 @@ function Videos() {
     const fetchVideos = async () => {
         try {
             setLoading(true);
-            const response = await axios.get(`${API_URL}/videos`);
+            const response = await api.get('/videos');
             setVideos(response.data.videos);
+
             setError('');
         } catch (err) {
             console.error('Error fetching videos:', err);

@@ -1,9 +1,8 @@
 import { useState, useEffect } from 'react';
-import axios from 'axios';
 import DashboardCarousel from '../components/DashboardCarousel';
 import './Dashboard.css';
+import api from '../services/api';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
 const Dashboard = () => {
     const [posts, setPosts] = useState([]);
@@ -13,7 +12,7 @@ const Dashboard = () => {
     useEffect(() => {
         const fetchDashboardPosts = async () => {
             try {
-                const response = await axios.get(`${API_URL}/dashboard-posts`);
+                const response = await api.get('/dashboard-posts');
                 setPosts(response.data);
             } catch (err) {
                 console.error('Error fetching dashboard posts:', err);
@@ -25,6 +24,7 @@ const Dashboard = () => {
 
         fetchDashboardPosts();
     }, []);
+
 
     if (loading) {
         return (

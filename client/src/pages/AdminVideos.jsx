@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
 import './AdminVideos.css';
+import api, { setAuthToken } from '../services/api';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+const API_URL = import.meta.env.VITE_API_URL;
+
 
 function AdminVideos() {
     const [videos, setVideos] = useState([]);
@@ -30,11 +31,11 @@ function AdminVideos() {
         try {
             setLoading(true);
             const token = localStorage.getItem('adminToken');
-            const response = await axios.get(`${API_URL}/videos`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            setAuthToken(token);
+            const response = await api.get('/videos');
             setVideos(response.data.videos);
             setError('');
+
         } catch (error) {
             console.error('Failed to fetch videos:', error);
             setError('Failed to load videos');
@@ -50,15 +51,12 @@ function AdminVideos() {
 
         try {
             const token = localStorage.getItem('adminToken');
+            setAuthToken(token);
 
             if (editingVideo) {
-                await axios.put(`${API_URL}/videos/${editingVideo._id}`, videoFormData, {
-                    headers: { Authorization: `Bearer ${token}` }
-                });
+                await api.put(`/videos/${editingVideo._id}`, videoFormData);
             } else {
-                await axios.post(`${API_URL}/videos`, videoFormData, {
-                    headers: { Authorization: `Bearer ${token}` }
-                });
+                await api.post('/videos', videoFormData);
             }
 
             setShowVideoForm(false);
@@ -86,10 +84,10 @@ function AdminVideos() {
 
         try {
             const token = localStorage.getItem('adminToken');
-            await axios.delete(`${API_URL}/videos/${videoId}`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            setAuthToken(token);
+            await api.delete(`/videos/${videoId}`);
             fetchVideos();
+
         } catch (error) {
             setError('Failed to delete video');
         }
