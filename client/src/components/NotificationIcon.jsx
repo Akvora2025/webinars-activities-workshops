@@ -11,7 +11,7 @@ import {
     Calendar,
     Award
 } from 'lucide-react';
-import socketService from '../services/socketService';
+import { useSocket } from '../contexts/SocketContext';
 import './NotificationIcon.css';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
@@ -24,33 +24,36 @@ function NotificationIcon() {
     const panelRef = useRef(null);
 
     // Calculate unread count from notifications array
+    const { socket } = useSocket();
+
+    // Calculate unread count from notifications array
     const unreadCount = useMemo(() => {
         return notifications.filter(n => n.isRead === false).length;
     }, [notifications]);
 
     useEffect(() => {
         if (userId) {
-            // Fetch notifications on mount
             fetchNotifications();
-
-            // Connect to Socket.IO
-            socketService.connect(userId);
-
-            // Listen for events
-            socketService.onNotification(handleNewNotification);
-            socketService.onAnnouncement(handleNewAnnouncement);
-            socketService.onRegistrationUpdate(handleRegistrationUpdate);
-            socketService.onAnnouncementDelete(handleAnnouncementDelete);
-
-            return () => {
-                socketService.off('notification:new', handleNewNotification);
-                socketService.off('announcement:new', handleNewAnnouncement);
-                socketService.off('announcement:updated', handleNewAnnouncement);
-                socketService.off('registration:status-updated', handleRegistrationUpdate);
-                socketService.off('announcement:deleted', handleAnnouncementDelete);
-            };
         }
     }, [userId]);
+
+    useEffect(() => {
+        if (!socket) return;
+
+        socket.on('notification:new', handleNewNotification);
+        socket.on('announcement:new', handleNewAnnouncement);
+        socket.on('announcement:updated', handleNewAnnouncement);
+        socket.on('registration:status-updated', handleRegistrationUpdate);
+        socket.on('announcement:deleted', handleAnnouncementDelete);
+
+        return () => {
+            socket.off('notification:new', handleNewNotification);
+            socket.off('announcement:new', handleNewAnnouncement);
+            socket.off('announcement:updated', handleNewAnnouncement);
+            socket.off('registration:status-updated', handleRegistrationUpdate);
+            socket.off('announcement:deleted', handleAnnouncementDelete);
+        };
+    }, [socket]);
 
     // Close panel when clicking outside
     useEffect(() => {

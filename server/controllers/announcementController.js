@@ -32,13 +32,15 @@ export const createAnnouncement = async (req, res) => {
 
         // Create notifications for all users
         const users = await User.find({ clerkId: { $exists: true, $ne: null } }, 'clerkId');
+        const io = req.app.get('io');
         const notificationPromises = users.map(user =>
             createNotification(
                 user.clerkId,
                 'announcement',
                 title,
                 message,
-                { expiresAt, announcementId: announcement._id, link }
+                { expiresAt, announcementId: announcement._id, link },
+                io
             )
         );
 
@@ -57,7 +59,6 @@ export const createAnnouncement = async (req, res) => {
         });
 
         // Emit socket event
-        const io = req.app.get('io');
         if (io) {
             io.emit('announcement:new', announcement);
         }

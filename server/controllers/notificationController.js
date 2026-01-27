@@ -1,7 +1,7 @@
 import Notification from '../models/Notification.js';
 import { sendPushToUser } from '../utils/pushService.js';
 
-export const createNotification = async (userId, type, title, message, metadata = {}) => {
+export const createNotification = async (userId, type, title, message, metadata = {}, io = null) => {
     try {
         const notification = new Notification({
             userId,
@@ -16,6 +16,19 @@ export const createNotification = async (userId, type, title, message, metadata 
         });
 
         await notification.save();
+
+        // Emit Socket.IO event if io instance is provided
+        if (io) {
+            io.to(`user:${userId}`).emit('notification:new', {
+                _id: notification._id,
+                type,
+                title,
+                message,
+                metadata,
+                isRead: false,
+                createdAt: notification.createdAt
+            });
+        }
 
         // Send push notification
         await sendPushToUser(userId, {

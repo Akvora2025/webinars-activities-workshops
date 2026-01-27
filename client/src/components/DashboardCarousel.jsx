@@ -135,7 +135,13 @@ const DashboardCarousel = ({ items }) => {
                             whileHover={{ scale: 1.05 }}
                             whileTap={{ scale: 0.95 }}
                             className="carousel-cta"
-                            onClick={() => navigate(currentItem.ctaLink)}
+                            onClick={() => {
+                                if (currentItem.type === 'webinar') {
+                                    navigate(`/webinars?register=${currentItem.id}`);
+                                } else {
+                                    navigate(currentItem.ctaLink);
+                                }
+                            }}
                         >
                             {currentItem.ctaText}
                         </motion.button>

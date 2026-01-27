@@ -10,6 +10,7 @@ import User from '../models/User.js';
 import { adminAuth } from '../middleware/adminAuth.js';
 import { storage } from '../config/storage.js';
 import { uploadToGridFS, deleteFromGridFS } from '../utils/gridfs.js';
+import { createNotification } from '../controllers/notificationController.js';
 
 const router = express.Router();
 
@@ -418,9 +419,49 @@ router.put('/:eventId/participants/:userId/status', adminAuth, async (req, res) 
 
     await event.save();
 
-    // Send notification
-    // Note: In a real app, we would import createNotification here
-    // For now, we'll assume the frontend handles polling or the user sees it on refresh
+    // Send notification via Socket and Push
+    const io = req.app.get('io');
+    const participantUserId = event.participants[participantIndex].userId;
+
+    const notificationTitle = status === 'approved'
+      ? `✅ Registration Approved`
+      : status === 'rejected'
+        ? `❌ Registration Rejected`
+        : `⏳ Registration Status Updated`;
+
+    const notificationMessage = status === 'approved'
+      ? `Your registration for "${event.title}" has been approved! You're all set.`
+      : status === 'rejected'
+        ? `Your registration for "${event.title}" was rejected. Reason: ${rejectionReason || 'Admin decision'}`
+        : `Your registration status for "${event.title}" has been updated to ${status}.`;
+
+    try {
+      await createNotification(
+        participantUserId,
+        status === 'approved' ? 'approval' : status === 'rejected' ? 'rejection' : 'registration',
+        notificationTitle,
+        notificationMessage,
+        {
+          relatedEvent: event._id,
+          url: `/workshops`
+        },
+        io
+      );
+    } catch (e) {
+      console.error('Error sending notification from events route:', e);
+    }
+
+    if (io) {
+      io.to(`user:${participantUserId}`).emit('registration:status-updated', {
+        status,
+        workshop: {
+          id: event._id,
+          title: event.title
+        },
+        message: notificationMessage,
+        meetingLink: status === 'approved' ? event.meetingLink : undefined
+      });
+    }
 
     res.json({
       success: true,

@@ -93,6 +93,14 @@
   box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15);
 }
 
+/* Global Radiant Highlight for Click/Active */
+.event-card:active {
+  transform: scale(0.995);
+  box-shadow: 0 0 20px 5px rgba(59, 130, 246, 0.4);
+  border-color: rgba(59, 130, 246, 0.5);
+  transition: all 0.1s ease;
+}
+
 .event-image {
   position: relative;
   height: 200px;
@@ -245,6 +253,35 @@
   width: 100%;
 }
 
+/* Workshop Specific: Registered Actions Layout (Side-by-Side) */
+.workshop-registered-actions {
+  display: flex !important;
+  flex-direction: row !important;
+  /* Force row layout */
+  gap: 0.75rem;
+  width: 100%;
+  margin-top: 0.5rem;
+}
+
+.workshop-registered-actions .register-btn,
+.workshop-registered-actions .join-meeting-btn {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  height: 44px;
+  margin: 0;
+  white-space: nowrap;
+  font-size: 0.9rem;
+  width: 100%;
+}
+
+.workshop-registered-actions .join-meeting-btn {
+  box-sizing: border-box;
+  padding: 0 1rem;
+}
+
 .status-badge-container {
   display: flex;
   flex-direction: column;
@@ -366,36 +403,181 @@
 
 @media (max-width: 768px) {
   .events-container {
-    padding: 1rem;
+    padding: 1rem 0;
+    /* Full width container */
+    overflow-x: hidden;
+  }
+
+  .events-header {
+    padding: 0 1.5rem;
+    /* Keep header padded */
+    margin-bottom: 1.5rem;
+    text-align: left;
   }
 
   .events-header h1 {
-    font-size: 2rem;
+    font-size: 1.75rem;
+  }
+
+  .events-header p {
+    font-size: 1rem;
   }
 
   .events-grid {
-    grid-template-columns: 1fr;
-    gap: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    /* Stack cards without gap for seamless list feel, or minimal gap */
+  }
+
+  .event-card {
+    border-radius: 0;
+    box-shadow: none;
+    border: none;
+    border-bottom: 1px solid #f3f4f6;
+    margin-bottom: 0;
+    padding-bottom: 1rem;
+    /* Add subtle active state for touch */
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* Interaction Animation */
+  .event-card:active {
+    background-color: #f9fafb;
+  }
+
+  .event-card:active::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.02);
+    pointer-events: none;
+  }
+
+  .event-image {
+    height: 150px;
+    /* Reduced height */
+    margin: 0 1rem 1rem 1rem;
+    /* Inset image slightly or keep full? Let's keep full width or inset. User said "Full Width". Usually image is full width. */
+    margin: 0;
+    width: 100%;
+    border-radius: 0;
+  }
+
+  .event-content {
+    padding: 0 1.25rem 1.25rem 1.25rem;
   }
 
   .event-header {
-    flex-direction: column;
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: space-between;
     align-items: flex-start;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .event-header h3 {
+    font-size: 1.125rem;
+    width: 100%;
+    /* Title takes full width line */
+    margin-bottom: 0.25rem;
+  }
+
+  .event-badges {
+    width: 100%;
+    justify-content: flex-start;
+    margin-top: 0;
+  }
+
+  .status-badge-inline {
+    font-size: 0.7rem;
+    padding: 2px 8px;
   }
 
   .event-price {
-    margin-left: 0;
-    margin-top: 0.5rem;
+    margin-left: auto;
+    /* Push price to right? */
+    margin-left: 0.5rem;
+    font-size: 0.75rem;
+    padding: 2px 8px;
+  }
+
+  .event-description {
+    font-size: 0.875rem;
+    line-height: 1.5;
+    margin-bottom: 1rem;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .event-details {
+    margin-bottom: 1rem;
+    background: #f9fafb;
+    padding: 1rem;
+    border-radius: 12px;
   }
 
   .event-detail {
-    flex-direction: column;
-    align-items: flex-start;
+    flex-direction: row;
+    /* Inline Key-Value */
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+    font-size: 0.875rem;
+  }
+
+  .event-detail:last-child {
+    margin-bottom: 0;
   }
 
   .event-detail strong {
     min-width: auto;
-    margin-right: 0;
-    margin-bottom: 0.25rem;
+    width: auto;
+    margin-right: 1rem;
+    margin-bottom: 0;
+    color: #6b7280;
+    /* Muted label */
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-weight: 500;
+  }
+
+  /* Make value align right */
+  .event-detail {
+    text-align: right;
+  }
+
+  .event-detail strong {
+    text-align: left;
+    flex: 1;
+  }
+
+  .event-tags {
+    display: none;
+    /* Hide tags for cleaner mobile view */
+  }
+
+  .event-actions {
+    width: 100%;
+  }
+
+  .register-btn {
+    width: 100%;
+    padding: 0.75rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+
+  .rejected-container {
+    width: 100%;
   }
 }

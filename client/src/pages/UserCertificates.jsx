@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useAuth } from '@clerk/clerk-react';
+import { useSocket } from '../contexts/SocketContext';
 import toast from 'react-hot-toast';
 import { Download, Award, Calendar, Eye, Search, X } from 'lucide-react';
 import './UserCertificates.css';
@@ -14,10 +15,21 @@ function UserCertificates() {
     const { getToken } = useAuth();
     const [error, setError] = useState(null);
     const [viewingCert, setViewingCert] = useState(null);
+    const { socket } = useSocket();
 
     useEffect(() => {
         fetchCertificates();
     }, []);
+
+    useEffect(() => {
+        if (!socket) return;
+        const handleNewCert = () => {
+            fetchCertificates();
+            toast.success('New certificate received!');
+        };
+        socket.on('certificate:issued', handleNewCert);
+        return () => socket.off('certificate:issued', handleNewCert);
+    }, [socket]);
 
     const fetchCertificates = async () => {
         try {

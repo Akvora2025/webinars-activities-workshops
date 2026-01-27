@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuth, useUser } from '@clerk/clerk-react';
+import { useSocket } from '../contexts/SocketContext';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import toast from 'react-hot-toast';
@@ -21,6 +22,55 @@ function Workshops() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [isAutoRegistering, setIsAutoRegistering] = useState(searchParams.has('register'));
   const navigate = useNavigate();
+  const { socket } = useSocket();
+
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleStatusUpdate = (data) => {
+      // Update local state if the registration exists
+      setMyRegistrations(prev => {
+        const exists = prev.some(reg => reg.workshop && reg.workshop._id === data.workshop.id);
+        if (!exists) {
+          // If it doesn't exist (e.g. fresh approval from admin but we didn't have it locally?), reload.
+          // But normally we have it as 'pending'.
+          // If we don't have it, fetch everything.
+          fetchMyRegistrations();
+          return prev;
+        }
+
+        return prev.map(reg => {
+          if (reg.workshop && reg.workshop._id === data.workshop.id) {
+            return {
+              ...reg,
+              status: data.status,
+              paymentStatus: data.status === 'approved' ? 'APPROVED' :
+                data.status === 'rejected' ? 'REJECTED' : 'PENDING',
+              rejectionReason: data.status === 'rejected' ? (data.message || 'Rejected') : '',
+              workshop: {
+                ...reg.workshop,
+                meetingLink: data.meetingLink || reg.workshop.meetingLink
+              }
+            };
+          }
+          return reg;
+        });
+      });
+    };
+
+    const handleRegistrationCreated = () => {
+      fetchMyRegistrations();
+      fetchWorkshops();
+    };
+
+    socket.on('registration:status-updated', handleStatusUpdate);
+    socket.on('registration:created', handleRegistrationCreated);
+
+    return () => {
+      socket.off('registration:status-updated', handleStatusUpdate);
+      socket.off('registration:created', handleRegistrationCreated);
+    };
+  }, [socket]);
 
 
   useEffect(() => {
@@ -235,7 +285,7 @@ function Workshops() {
 
                       if (status === 'approved' || paymentStatus === 'APPROVED') {
                         return (
-                          <div className="registered-actions">
+                          <div className="registered-actions workshop-registered-actions">
                             <button className="register-btn registered" disabled>
                               Registered
                             </button>
