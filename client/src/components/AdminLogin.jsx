@@ -6,7 +6,7 @@ import './AdminLogin.css';
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
 function AdminLogin() {
-  const [email, setEmail] = useState('admin@akvora.com');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -54,6 +54,7 @@ function AdminLogin() {
               onChange={(e) => setEmail(e.target.value)}
               required
               disabled={loading}
+              placeholder="Enter admin email"
             />
           </div>
           
@@ -82,9 +83,7 @@ function AdminLogin() {
         </form>
         
         <div className="admin-login-footer">
-          <p>Default credentials:</p>
-          <p>Email: admin@akvora.com</p>
-          <p>Password: admin123</p>
+         
         </div>
       </div>
     </div>

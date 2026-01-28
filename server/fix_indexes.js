@@ -2,6 +2,9 @@ import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import WorkshopRegistration from './models/WorkshopRegistration.js';
+import Event from './models/Event.js';
+import User from './models/User.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -20,21 +23,22 @@ const fixIndexes = async () => {
         await mongoose.connect(mongoUri);
         console.log('Connected to MongoDB');
 
-        const collections = await mongoose.connection.db.listCollections().toArray();
-        const certificateCollection = collections.find(c => c.name === 'certificates');
+        // 1. WorkshopRegistration Indexes
+        console.log('Syncing WorkshopRegistration indexes...');
+        await WorkshopRegistration.syncIndexes();
+        console.log('✓ WorkshopRegistration indexes synced.');
 
-        if (certificateCollection) {
-            console.log('Found certificates collection. Dropping indexes...');
-            await mongoose.connection.db.collection('certificates').dropIndexes();
-            console.log('Indexes dropped successfully.');
-        } else {
-            console.log('Certificates collection not found.');
-        }
+        // 2. Event Indexes (if any)
+        console.log('Syncing Event indexes...');
+        await Event.syncIndexes();
+        console.log('✓ Event indexes synced.');
 
-        console.log('Checking Users collection for cleanup (optional)...');
-        // Optional: Ensure Users don't have bad indexes if needed, but Certificates is the main target.
+        // 3. User Indexes
+        console.log('Syncing User indexes...');
+        await User.syncIndexes();
+        console.log('✓ User indexes synced.');
 
-        console.log('Done. Disconnecting...');
+        console.log('--- Index Maintenance Complete ---');
         await mongoose.disconnect();
         process.exit(0);
     } catch (error) {

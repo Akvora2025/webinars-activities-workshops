@@ -256,89 +256,16 @@ router.delete('/:id', adminAuth, async (req, res) => {
 });
 
 // Register for event
+// Register for event - DISABLED (Legacy Route)
+// Use /api/registrations/register instead to ensure WorkshopRegistration is created
 router.post('/:eventId/register', async (req, res) => {
-  try {
-    const { userId, userEmail, userName } = req.body;
-
-    if (!userId || !userEmail) {
-      return res.status(400).json({ error: 'User ID and email are required' });
-    }
-
-    const event = await Event.findById(req.params.eventId);
-
-    if (!event) {
-      return res.status(404).json({ error: 'Event not found' });
-    }
-
-    // Check if user is already registered
-    const isAlreadyRegistered = event.participants.some(
-      participant => participant.userId === userId
-    );
-
-    if (isAlreadyRegistered) {
-      return res.status(400).json({ error: 'Already registered for this event' });
-    }
-
-    // Determine status based on price
-    const isFree = !event.price || event.price == 0;
-    const initialStatus = isFree ? 'approved' : 'pending';
-    const initialPaymentStatus = isFree ? 'APPROVED' : 'PENDING';
-
-    // Add user to participants
-    event.participants.push({
-      userId,
-      email: userEmail,
-      name: userName || 'User',
-      registeredAt: new Date(),
-      status: initialStatus,
-      paymentStatus: initialPaymentStatus
-    });
-
-    await event.save();
-
-    res.json({
-      success: true,
-      message: isFree ? 'Successfully registered for event' : 'Registration submitted. Pending approval.',
-      participantCount: event.participants.length,
-      status: initialStatus
-    });
-  } catch (error) {
-    console.error('Event registration error:', error);
-    res.status(500).json({ error: 'Failed to register for event' });
-  }
+  return res.status(410).json({ error: 'This endpoint is deprecated. Please use /api/registrations/register' });
 });
 
 // Unregister from event
+// Unregister from event - DISABLED (Legacy Route)
 router.delete('/:eventId/unregister', async (req, res) => {
-  try {
-    const { userId } = req.body;
-
-    if (!userId) {
-      return res.status(400).json({ error: 'User ID is required' });
-    }
-
-    const event = await Event.findById(req.params.eventId);
-
-    if (!event) {
-      return res.status(404).json({ error: 'Event not found' });
-    }
-
-    // Remove user from participants
-    event.participants = event.participants.filter(
-      participant => participant.userId !== userId
-    );
-
-    await event.save();
-
-    res.json({
-      success: true,
-      message: 'Successfully unregistered from event',
-      participantCount: event.participants.length
-    });
-  } catch (error) {
-    console.error('Event unregistration error:', error);
-    res.status(500).json({ error: 'Failed to unregister from event' });
-  }
+  return res.status(410).json({ error: 'This endpoint is deprecated.' });
 });
 
 // Get event statistics
@@ -405,23 +332,32 @@ router.put('/:eventId/participants/:userId/status', adminAuth, async (req, res) 
       return res.status(404).json({ error: 'Participant not found' });
     }
 
-    // Update status
-    event.participants[participantIndex].status = status;
+    // Atomic update using array filters
+    let paymentStatus = 'PENDING';
+    if (status === 'approved') paymentStatus = 'APPROVED';
+    else if (status === 'rejected') paymentStatus = 'REJECTED';
 
-    // Update payment status based on status
-    if (status === 'approved') {
-      event.participants[participantIndex].paymentStatus = 'APPROVED';
-    } else if (status === 'rejected') {
-      event.participants[participantIndex].paymentStatus = 'REJECTED';
-    } else {
-      event.participants[participantIndex].paymentStatus = 'PENDING';
+    const updatedEvent = await Event.findOneAndUpdate(
+      { _id: eventId, "participants.userId": userId },
+      {
+        $set: {
+          "participants.$.status": status,
+          "participants.$.paymentStatus": paymentStatus
+        }
+      },
+      { new: true }
+    );
+
+    if (!updatedEvent) {
+      // Fallback if not found (maybe participant not in array yet? rare)
+      return res.status(404).json({ error: 'Event or participant not found' });
     }
 
-    await event.save();
+    const participant = updatedEvent.participants.find(p => p.userId === userId);
 
     // Send notification via Socket and Push
     const io = req.app.get('io');
-    const participantUserId = event.participants[participantIndex].userId;
+    const participantUserId = userId; // from params
 
     const notificationTitle = status === 'approved'
       ? `✅ Registration Approved`
@@ -430,10 +366,10 @@ router.put('/:eventId/participants/:userId/status', adminAuth, async (req, res) 
         : `⏳ Registration Status Updated`;
 
     const notificationMessage = status === 'approved'
-      ? `Your registration for "${event.title}" has been approved! You're all set.`
+      ? `Your registration for "${updatedEvent.title}" has been approved! You're all set.`
       : status === 'rejected'
-        ? `Your registration for "${event.title}" was rejected. Reason: ${rejectionReason || 'Admin decision'}`
-        : `Your registration status for "${event.title}" has been updated to ${status}.`;
+        ? `Your registration for "${updatedEvent.title}" was rejected. Reason: ${rejectionReason || 'Admin decision'}`
+        : `Your registration status for "${updatedEvent.title}" has been updated to ${status}.`;
 
     try {
       await createNotification(
@@ -442,7 +378,7 @@ router.put('/:eventId/participants/:userId/status', adminAuth, async (req, res) 
         notificationTitle,
         notificationMessage,
         {
-          relatedEvent: event._id,
+          relatedEvent: updatedEvent._id,
           url: `/workshops`
         },
         io
@@ -455,18 +391,18 @@ router.put('/:eventId/participants/:userId/status', adminAuth, async (req, res) 
       io.to(`user:${participantUserId}`).emit('registration:status-updated', {
         status,
         workshop: {
-          id: event._id,
-          title: event.title
+          id: updatedEvent._id,
+          title: updatedEvent.title
         },
         message: notificationMessage,
-        meetingLink: status === 'approved' ? event.meetingLink : undefined
+        meetingLink: status === 'approved' ? updatedEvent.meetingLink : undefined
       });
     }
 
     res.json({
       success: true,
       message: `Participant status updated to ${status}`,
-      participant: event.participants[participantIndex]
+      participant: participant
     });
   } catch (error) {
     console.error('Update participant status error:', error);

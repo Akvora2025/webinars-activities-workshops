@@ -66,21 +66,22 @@ export async function registerForEvent(req, res) {
 
                 // If free/approved, add to Event's participants list immediately
                 if (isFree) {
-                    const isAlreadyParticipant = workshop.participants.some(
-                        p => p.userId === user.clerkId
+                    // Atomic push to participants
+                    await Event.updateOne(
+                        { _id: workshopId, "participants.userId": { $ne: user.clerkId } },
+                        {
+                            $push: {
+                                participants: {
+                                    userId: user.clerkId,
+                                    email: user.email,
+                                    name: `${user.firstName} ${user.lastName}`,
+                                    registeredAt: new Date(),
+                                    status: 'approved',
+                                    paymentStatus: 'APPROVED'
+                                }
+                            }
+                        }
                     );
-
-                    if (!isAlreadyParticipant) {
-                        workshop.participants.push({
-                            userId: user.clerkId,
-                            email: user.email,
-                            name: `${user.firstName} ${user.lastName}`,
-                            registeredAt: new Date(),
-                            status: 'approved',
-                            paymentStatus: 'APPROVED'
-                        });
-                        await workshop.save();
-                    }
                 }
 
                 return res.status(200).json({
@@ -115,23 +116,23 @@ export async function registerForEvent(req, res) {
             paymentStatus: initialPaymentStatus
         });
 
-        // If free/approved, add to Event's participants list immediately
+        // If free/approved, add to Event's participants list immediately (Atomic)
         if (isFree) {
-            const isAlreadyParticipant = workshop.participants.some(
-                p => p.userId === user.clerkId
+            await Event.updateOne(
+                { _id: workshopId, "participants.userId": { $ne: user.clerkId } },
+                {
+                    $push: {
+                        participants: {
+                            userId: user.clerkId,
+                            email: user.email,
+                            name: `${user.firstName} ${user.lastName}`,
+                            registeredAt: new Date(),
+                            status: 'approved',
+                            paymentStatus: 'APPROVED'
+                        }
+                    }
+                }
             );
-
-            if (!isAlreadyParticipant) {
-                workshop.participants.push({
-                    userId: user.clerkId,
-                    email: user.email,
-                    name: `${user.firstName} ${user.lastName}`,
-                    registeredAt: new Date(),
-                    status: 'approved',
-                    paymentStatus: 'APPROVED'
-                });
-                await workshop.save();
-            }
         }
 
         res.status(201).json({
@@ -268,27 +269,24 @@ export async function updateRegistrationStatus(req, res) {
 
         await registration.save();
 
-        // If approved, add to Event's participants list
+        // If approved, add to Event's participants list (Atomic)
         if (status === 'approved') {
-            const event = await Event.findById(registration.workshop);
-            const user = await User.findById(registration.user);
-
-            if (event && user) {
-                // Check if already in participants
-                const isAlreadyParticipant = event.participants.some(
-                    p => p.userId === user.clerkId
-                );
-
-                if (!isAlreadyParticipant) {
-                    event.participants.push({
-                        userId: user.clerkId,
-                        email: user.email,
-                        name: `${user.firstName} ${user.lastName}`,
-                        registeredAt: new Date()
-                    });
-                    await event.save();
+            await Event.updateOne(
+                { _id: registration.workshop, "participants.userId": { $ne: registration.user.clerkId } },
+                {
+                    $push: {
+                        participants: {
+                            userId: registration.user.clerkId,
+                            email: registration.user.email,
+                            name: `${registration.user.firstName} ${registration.user.lastName}`,
+                            registeredAt: new Date(),
+                            // Inherit status from this approval action
+                            status: 'approved',
+                            paymentStatus: 'APPROVED'
+                        }
+                    }
                 }
-            }
+            );
         }
 
         // Create notification for user

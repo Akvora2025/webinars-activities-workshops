@@ -52,5 +52,8 @@ const workshopRegistrationSchema = new mongoose.Schema({
 
 // Ensure one registration per user per workshop
 workshopRegistrationSchema.index({ user: 1, workshop: 1 }, { unique: true });
+workshopRegistrationSchema.index({ status: 1 });
+workshopRegistrationSchema.index({ paymentStatus: 1 });
+workshopRegistrationSchema.index({ createdAt: -1 });
 
 export default mongoose.model('WorkshopRegistration', workshopRegistrationSchema);
