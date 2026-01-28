@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@clerk/clerk-react';
 import { QRCodeSVG } from 'qrcode.react';
 import toast from 'react-hot-toast';
-import api, { setAuthToken } from '../services/api';
+import { formatPrice } from '../utils/currency';
 import './EventRegistrationModal.css';
 
 
@@ -142,9 +142,9 @@ function EventRegistrationModal({ event, onClose, onSuccess }) {
                             <div className="qr-details">
                                 <p><strong>Payee:</strong> {payeeName}</p>
                                 <p><strong>UPI ID:</strong> {upiId}</p>
-                                <p className="amount-highlight"><strong>Amount:</strong> ₹{amount}</p>
+                                <p className="amount-highlight"><strong>Amount:</strong> {formatPrice(amount)}</p>
                                 <div className="dynamic-qr-hint">
-                                    <p>✨ Auto-fills amount (₹{amount})</p>
+                                    <p>✨ Auto-fills amount ({formatPrice(amount)})</p>
                                     <small>Scan with GPay, PhonePe, or Paytm</small>
                                 </div>
                             </div>

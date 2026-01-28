@@ -36,8 +36,13 @@ export async function registerForEvent(req, res) {
         // Check if Event is free (price is 0, null, or string "0")
         const isFree = !workshop.price || workshop.price == 0;
 
+        // SPECIAL FIX: Ensure Free Workshops are handled correctly
+        // Explicitly check if it's a workshop and free to prevent any ambiguity
+        const isFreeWorkshop = (workshop.type === 'workshop' && isFree);
+
         // Validate UPI reference only for PAID events
-        if (!isFree && !upiReference) {
+        // If it's a free workshop, we absolutely skip this check
+        if (!isFree && !isFreeWorkshop && !upiReference) {
             return res.status(400).json({ error: 'UPI Reference is required for paid events' });
         }
 
@@ -61,26 +66,28 @@ export async function registerForEvent(req, res) {
 
                 // If free/approved, add to Event's participants list immediately
                 if (isFree) {
-                    const isAlreadyParticipant = workshop.participants.some(
-                        p => p.userId === user.clerkId
+                    // Atomic push to participants
+                    await Event.updateOne(
+                        { _id: workshopId, "participants.userId": { $ne: user.clerkId } },
+                        {
+                            $push: {
+                                participants: {
+                                    userId: user.clerkId,
+                                    email: user.email,
+                                    name: `${user.firstName} ${user.lastName}`,
+                                    registeredAt: new Date(),
+                                    status: 'approved',
+                                    paymentStatus: 'APPROVED'
+                                }
+                            }
+                        }
                     );
-
-                    if (!isAlreadyParticipant) {
-                        workshop.participants.push({
-                            userId: user.clerkId,
-                            email: user.email,
-                            name: `${user.firstName} ${user.lastName}`,
-                            registeredAt: new Date(),
-                            status: 'approved',
-                            paymentStatus: 'APPROVED'
-                        });
-                        await workshop.save();
-                    }
                 }
 
                 return res.status(200).json({
                     success: true,
                     message: isFree ? 'Registration successful!' : 'Re-registration submitted. Pending verification.',
+                    registrationStatus: isFree ? 'approved' : 'pending',
                     registration: existingRegistration
                 });
             }
@@ -103,41 +110,64 @@ export async function registerForEvent(req, res) {
             user: user._id,
             workshop: workshopId,
             nameOnCertificate,
-            upiReference: isFree ? `FREE-${Date.now()}-${Math.floor(Math.random() * 1000)}` : upiReference, // Add random to ensure uniqueness
+            // If free, generate a unique reference. If paid, use provided one.
+            upiReference: isFree ? `FREE-${Date.now()}-${Math.floor(Math.random() * 10000)}` : upiReference,
             status: initialStatus,
             paymentStatus: initialPaymentStatus
         });
 
-        // If free/approved, add to Event's participants list immediately
+        // If free/approved, add to Event's participants list immediately (Atomic)
         if (isFree) {
-            const isAlreadyParticipant = workshop.participants.some(
-                p => p.userId === user.clerkId
+            await Event.updateOne(
+                { _id: workshopId, "participants.userId": { $ne: user.clerkId } },
+                {
+                    $push: {
+                        participants: {
+                            userId: user.clerkId,
+                            email: user.email,
+                            name: `${user.firstName} ${user.lastName}`,
+                            registeredAt: new Date(),
+                            status: 'approved',
+                            paymentStatus: 'APPROVED'
+                        }
+                    }
+                }
             );
-
-            if (!isAlreadyParticipant) {
-                workshop.participants.push({
-                    userId: user.clerkId,
-                    email: user.email,
-                    name: `${user.firstName} ${user.lastName}`,
-                    registeredAt: new Date(),
-                    status: 'approved',
-                    paymentStatus: 'APPROVED'
-                });
-                await workshop.save();
-            }
         }
 
         res.status(201).json({
             success: true,
-            message: 'Registration submitted successfully. Pending verification.',
+            // Dynamic message based on fee status
+            message: isFree ? 'Registration successful!' : 'Registration submitted successfully. Pending verification.',
+            registrationStatus: initialStatus,
             registration
         });
+
+        const io = req.app.get('io');
+        if (io) {
+            io.to(`user:${user.clerkId}`).emit('registration:created', {
+                workshopId: workshopId,
+                status: initialStatus,
+                title: workshop.title
+            });
+
+            // Emit to admin
+            io.to('admin').emit('stats:updated', { type: 'registration' });
+        }
     } catch (error) {
         console.error('Event registration error:', error);
+
+        // Detailed error logging specifically for this issue
+        if (req.body && req.body.workshopId) {
+            console.error(`Failed registration details - WorkshopID: ${req.body.workshopId}, User: ${req.clerkId}`);
+        }
+
         if (error.code === 11000) {
             return res.status(400).json({ error: 'Duplicate registration or UPI reference' });
         }
-        res.status(500).json({ error: 'Failed to submit registration' });
+
+        // Return explicit error for clearer debugging on frontend
+        res.status(500).json({ error: 'Failed to submit registration. Please try again.' });
     }
 }
 
@@ -239,27 +269,24 @@ export async function updateRegistrationStatus(req, res) {
 
         await registration.save();
 
-        // If approved, add to Event's participants list
+        // If approved, add to Event's participants list (Atomic)
         if (status === 'approved') {
-            const event = await Event.findById(registration.workshop);
-            const user = await User.findById(registration.user);
-
-            if (event && user) {
-                // Check if already in participants
-                const isAlreadyParticipant = event.participants.some(
-                    p => p.userId === user.clerkId
-                );
-
-                if (!isAlreadyParticipant) {
-                    event.participants.push({
-                        userId: user.clerkId,
-                        email: user.email,
-                        name: `${user.firstName} ${user.lastName}`,
-                        registeredAt: new Date()
-                    });
-                    await event.save();
+            await Event.updateOne(
+                { _id: registration.workshop, "participants.userId": { $ne: registration.user.clerkId } },
+                {
+                    $push: {
+                        participants: {
+                            userId: registration.user.clerkId,
+                            email: registration.user.email,
+                            name: `${registration.user.firstName} ${registration.user.lastName}`,
+                            registeredAt: new Date(),
+                            // Inherit status from this approval action
+                            status: 'approved',
+                            paymentStatus: 'APPROVED'
+                        }
+                    }
                 }
-            }
+            );
         }
 
         // Create notification for user
@@ -279,6 +306,8 @@ export async function updateRegistrationStatus(req, res) {
                 ? `Your registration for "${workshop.title}" was rejected. Reason: ${registration.rejectionReason}`
                 : `Your registration status for "${workshop.title}" has been updated to ${status}.`;
 
+        const io = req.app.get('io');
+
         await createNotification(
             user.clerkId,
             status === 'approved' ? 'approval' : status === 'rejected' ? 'rejection' : 'registration',
@@ -288,11 +317,11 @@ export async function updateRegistrationStatus(req, res) {
                 relatedEvent: workshop._id,
                 relatedRegistration: registration._id,
                 url: `/workshops`
-            }
+            },
+            io
         );
 
         // Emit Socket.IO event to user
-        const io = req.app.get('io');
         if (io) {
             io.to(`user:${user.clerkId}`).emit('registration:status-updated', {
                 registrationId: registration._id,
@@ -301,7 +330,8 @@ export async function updateRegistrationStatus(req, res) {
                     id: workshop._id,
                     title: workshop.title
                 },
-                message: notificationMessage
+                message: notificationMessage,
+                meetingLink: status === 'approved' ? workshop.meetingLink : undefined
             });
 
             // Emit to admin for participant count update

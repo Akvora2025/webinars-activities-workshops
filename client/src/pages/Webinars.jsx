@@ -1,8 +1,12 @@
 import { useState, useEffect } from 'react';
 import { SignIn as ClerkSignIn, useAuth, useUser } from '@clerk/clerk-react';
+import { useSocket } from '../contexts/SocketContext';
+import { useSearchParams, useNavigate } from 'react-router-dom';
+import axios from 'axios';
 import toast from 'react-hot-toast';
 import EventRegistrationModal from '../components/EventRegistrationModal';
 import { calculateEventStatus, getStatusLabel } from '../utils/eventStatus';
+import { formatPrice } from '../utils/currency';
 import './Webinars.css';
 import api, { setAuthToken, API_URL } from '../services/api';
 
@@ -14,8 +18,47 @@ function Webinars() {
   const [error, setError] = useState('');
   const [previewImage, setPreviewImage] = useState(null);
   const [selectedWebinar, setSelectedWebinar] = useState(null);
-  const { isSignedIn, user } = useUser();
+  const { isSignedIn, isLoaded: isUserLoaded, user } = useUser();
   const { getToken } = useAuth();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const { socket } = useSocket();
+
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleStatusUpdate = (data) => {
+      setMyRegistrations(prev => prev.map(reg => {
+        if (reg.id === data.workshop.id) {
+          return {
+            ...reg,
+            registrationStatus: data.status,
+            status: data.status === 'approved' ? 'Approved' :
+              data.status === 'rejected' ? 'Rejected' : 'Pending',
+            meetingLink: data.meetingLink || reg.meetingLink,
+            rejectionReason: data.status === 'rejected' ? (data.message || 'Rejected by admin') : null
+          };
+        }
+        return reg;
+      }));
+
+      // If needed, show toast or rely on notification component
+      // toast(data.message, { icon: data.status === 'approved' ? '✅' : 'ℹ️' });
+    };
+
+    const handleRegistrationCreated = () => {
+      fetchMyRegistrations();
+      fetchWebinars();
+    };
+
+    socket.on('registration:status-updated', handleStatusUpdate);
+    socket.on('registration:created', handleRegistrationCreated);
+
+    return () => {
+      socket.off('registration:status-updated', handleStatusUpdate);
+      socket.off('registration:created', handleRegistrationCreated);
+    };
+  }, [socket]);
 
   useEffect(() => {
     fetchWebinars();
@@ -23,6 +66,51 @@ function Webinars() {
       fetchMyRegistrations();
     }
   }, [isSignedIn]);
+
+  // Handle Auto-Registration from Dashboard/Link
+  useEffect(() => {
+    const registerId = searchParams.get('register');
+    if (registerId && webinars.length > 0 && isUserLoaded) {
+      if (!isSignedIn) {
+        toast.error('Please sign in to register');
+        // Clear param to avoid loop/confusing state
+        searchParams.delete('register');
+        setSearchParams(searchParams);
+        return;
+      }
+
+      const webinarToRegister = webinars.find(w => w._id === registerId);
+      if (webinarToRegister) {
+        // If it's a paid event or we want to show details first in modal
+        if (webinarToRegister.price > 0) {
+          setSelectedWebinar(webinarToRegister);
+        } else {
+          // For free events, we could auto-trigger handleRegister, 
+          // but opening the modal (or triggering logic) is safer.
+          // Workshops uses modal for all. Webinars handleRegister handles logic.
+          // Let's open logic directly? 
+          // "Payment page opens immediately".
+          // If price > 0, modal is payment page.
+          // If price == 0, handleRegister does it instantly.
+          // Let's trigger handleRegister directly for free if that's the desired flow,
+          // OR just open selectedWebinar (which might open modal?)
+          // logic in return statement:
+          // {selectedWebinar && <EventRegistrationModal ... />}
+
+          // If free, handleRegister calls API directly.
+          // If paid, it setsSelectedWebinar.
+
+          // Let's reuse handleRegister logic but we need to wait for render?
+          // No, let's just call it.
+          handleRegister(webinarToRegister);
+        }
+
+        // Clear param after handling
+        searchParams.delete('register');
+        setSearchParams(searchParams);
+      }
+    }
+  }, [searchParams, webinars, isSignedIn, isUserLoaded]);
 
   const fetchMyRegistrations = async () => {
     try {
@@ -145,7 +233,7 @@ function Webinars() {
                       </span>
 
                       <span className="event-price">
-                        {webinar.price == 0 ? 'Free' : `$${webinar.price}`}
+                        {formatPrice(webinar.price)}
                       </span>
                     </div>
                   </div>

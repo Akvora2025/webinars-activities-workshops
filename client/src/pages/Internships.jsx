@@ -1,7 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useAuth, useUser } from '@clerk/clerk-react';
+import { useSocket } from '../contexts/SocketContext';
+import axios from 'axios';
 import toast from 'react-hot-toast';
 import { calculateEventStatus, getStatusLabel } from '../utils/eventStatus';
+import { formatPrice } from '../utils/currency';
 import './Internships.css';
 import api, { setAuthToken } from '../services/api';
 
@@ -16,6 +19,57 @@ function Internships() {
   const { isSignedIn, user } = useUser();
   const { getToken } = useAuth();
   const [myRegistrations, setMyRegistrations] = useState([]);
+  const { socket } = useSocket();
+
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleStatusUpdate = (data) => {
+      setMyRegistrations(prev => {
+        // Find if we have this registration
+        // Internships might align with workshop/event ID structure
+        const targetId = data.workshop.id;
+
+        const exists = prev.some(reg => {
+          // Handle both populated object or direct ID
+          const regId = reg.workshop?._id || reg.workshop || reg.event?._id || reg.event;
+          return regId === targetId;
+        });
+
+        if (!exists) {
+          fetchMyRegistrations();
+          return prev;
+        }
+
+        return prev.map(reg => {
+          const regId = reg.workshop?._id || reg.workshop || reg.event?._id || reg.event;
+          if (regId === targetId) {
+            return {
+              ...reg,
+              status: data.status,
+              paymentStatus: data.status === 'approved' ? 'APPROVED' :
+                data.status === 'rejected' ? 'REJECTED' : 'PENDING',
+              rejectionReason: data.status === 'rejected' ? (data.message || 'Rejected') : '',
+            };
+          }
+          return reg;
+        });
+      });
+    };
+
+    const handleRegistrationCreated = () => {
+      fetchMyRegistrations();
+      fetchInternships();
+    };
+
+    socket.on('registration:status-updated', handleStatusUpdate);
+    socket.on('registration:created', handleRegistrationCreated);
+
+    return () => {
+      socket.off('registration:status-updated', handleStatusUpdate);
+      socket.off('registration:created', handleRegistrationCreated);
+    };
+  }, [socket]);
 
   useEffect(() => {
     fetchInternships();
@@ -141,7 +195,7 @@ function Internships() {
                       </span>
 
                       <span className="event-price">
-                        {internship.price == 0 ? 'Free' : `$${internship.price}`}
+                        {formatPrice(internship.price)}
                       </span>
                     </div>
                   </div>

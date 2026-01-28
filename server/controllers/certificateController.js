@@ -79,7 +79,8 @@ export const uploadCertificate = async (req, res) => {
                 {
                     url: '/my-certificates',
                     relatedEvent: eventId
-                }
+                },
+                req.app.get('io')
             );
 
             // Emit socket event

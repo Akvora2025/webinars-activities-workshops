@@ -18,43 +18,16 @@ router.post('/login', async (req, res) => {
     }
 
     const adminEmail = email.toLowerCase();
-    const defaultAdminEmail = 'admin@akvora.com';
-    const defaultAdminPassword = 'admin123';
 
     // Find admin user
-    let adminUser = await User.findOne({
+    const adminUser = await User.findOne({
       email: adminEmail,
       role: 'admin'
     });
 
-    // If admin user doesn't exist, create it
+    // If admin user doesn't exist, return error
     if (!adminUser) {
-      // Only create default admin user for the default email
-      if (adminEmail !== defaultAdminEmail) {
-        return res.status(401).json({ error: 'Invalid credentials' });
-      }
-
-      const hashedPassword = await bcrypt.hash(defaultAdminPassword, 10);
-      const currentYear = new Date().getFullYear();
-
-      adminUser = await User.create({
-        email: defaultAdminEmail,
-        role: 'admin',
-        password: hashedPassword,
-        firstName: 'Admin',
-        lastName: 'User',
-        emailVerified: true,
-        profileCompleted: true,
-        registeredYear: currentYear
-        // Note: clerkId and akvoraId are optional for admin users
-      });
-    }
-
-    // If admin user exists but password is missing, set the default password
-    if (!adminUser.password) {
-      const hashedPassword = await bcrypt.hash(defaultAdminPassword, 10);
-      adminUser.password = hashedPassword;
-      await adminUser.save();
+      return res.status(401).json({ error: 'Invalid credentials' });
     }
 
     // Verify password
@@ -71,7 +44,7 @@ router.post('/login', async (req, res) => {
         email: adminUser.email,
         role: adminUser.role
       },
-      process.env.JWT_SECRET || 'fallback-secret-key',
+      process.env.JWT_SECRET,
       { expiresIn: '24h' }
     );
 
