@@ -3,6 +3,7 @@ import { useAuth } from '@clerk/clerk-react';
 import { QRCodeSVG } from 'qrcode.react';
 import toast from 'react-hot-toast';
 import { formatPrice } from '../utils/currency';
+import api, { setAuthToken } from '../services/api';
 import './EventRegistrationModal.css';
 
 
