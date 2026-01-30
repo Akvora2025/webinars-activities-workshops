@@ -14,6 +14,7 @@ function EventRegistrationModal({ event, onClose, onSuccess }) {
     const [profile, setProfile] = useState(null);
     const [upiReference, setUpiReference] = useState('');
     const [upiFallback, setUpiFallback] = useState(false);
+    const [isRedirecting, setIsRedirecting] = useState(false);
     const [error, setError] = useState('');
 
     useEffect(() => {
@@ -148,14 +149,19 @@ function EventRegistrationModal({ event, onClose, onSuccess }) {
 
                                 <button
                                     type="button"
-                                    className="upi-pay-btn"
+                                    className={`upi-pay-btn ${isRedirecting ? 'processing' : ''}`}
+                                    disabled={isRedirecting}
                                     onClick={() => {
+                                        setIsRedirecting(true);
                                         window.location.href = upiString;
                                         // Show fallback message after a short delay since we can't detect deep link success
-                                        setTimeout(() => setUpiFallback(true), 1000);
+                                        setTimeout(() => {
+                                            setUpiFallback(true);
+                                            setIsRedirecting(false);
+                                        }, 2000);
                                     }}
                                 >
-                                    Pay using UPI App
+                                    {isRedirecting ? 'Processing...' : 'Pay using UPI App'}
                                 </button>
 
                                 {upiFallback && (
@@ -170,6 +176,7 @@ function EventRegistrationModal({ event, onClose, onSuccess }) {
                             <label>UPI Reference Number (UTR)</label>
                             <input
                                 type="text"
+                                className={error ? 'error-shake' : ''}
                                 placeholder="Enter 12-digit UPI Reference Number"
                                 value={upiReference}
                                 onChange={(e) => {
