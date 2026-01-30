@@ -13,6 +13,7 @@ function EventRegistrationModal({ event, onClose, onSuccess }) {
     const [submitting, setSubmitting] = useState(false);
     const [profile, setProfile] = useState(null);
     const [upiReference, setUpiReference] = useState('');
+    const [upiFallback, setUpiFallback] = useState(false);
     const [error, setError] = useState('');
 
     useEffect(() => {
@@ -144,10 +145,24 @@ function EventRegistrationModal({ event, onClose, onSuccess }) {
                                 <p><strong>Payee:</strong> {payeeName}</p>
                                 <p><strong>UPI ID:</strong> {upiId}</p>
                                 <p className="amount-highlight"><strong>Amount:</strong> {formatPrice(amount)}</p>
-                                <div className="dynamic-qr-hint">
-                                    <p>✨ Auto-fills amount ({formatPrice(amount)})</p>
-                                    <small>Scan with GPay, PhonePe, or Paytm</small>
-                                </div>
+
+                                <button
+                                    type="button"
+                                    className="upi-pay-btn"
+                                    onClick={() => {
+                                        window.location.href = upiString;
+                                        // Show fallback message after a short delay since we can't detect deep link success
+                                        setTimeout(() => setUpiFallback(true), 1000);
+                                    }}
+                                >
+                                    Pay using UPI App
+                                </button>
+
+                                {upiFallback && (
+                                    <p className="upi-fallback-text">
+                                        No UPI app found. Please scan the QR manually.
+                                    </p>
+                                )}
                             </div>
                         </div>
 

@@ -157,24 +157,38 @@ h2 {
     object-fit: contain;
 }
 
-.dynamic-qr-hint {
-    margin-top: 15px;
-    padding: 10px;
-    background: rgba(102, 126, 234, 0.1);
-    border-radius: 8px;
-    border-left: 3px solid #667eea;
-}
-
-.dynamic-qr-hint p {
-    margin: 0;
-    font-size: 14px;
-    color: #1a1a2e;
+.upi-pay-btn {
+    background: #667eea;
+    color: white;
+    border: none;
+    padding: 12px 20px;
+    border-radius: 25px;
+    font-size: 15px;
     font-weight: 600;
+    cursor: pointer;
+    margin-top: 10px;
+    transition: all 0.2s;
+    width: 100%;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
-.dynamic-qr-hint small {
-    color: #718096;
-    font-size: 11px;
+.upi-pay-btn:hover {
+    background: #5a67d8;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 10px rgba(0, 0, 0, 0.15);
+}
+
+.upi-pay-btn:active {
+    transform: translateY(0);
+}
+
+.upi-fallback-text {
+    font-size: 13px;
+    color: #f6ad55;
+    margin-top: 10px;
+    text-align: center;
+    font-weight: 500;
+    animation: fadeIn 0.3s ease;
 }
 
 .qr-image-wrapper svg {
