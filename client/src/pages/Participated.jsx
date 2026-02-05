@@ -5,6 +5,9 @@ import { MonitorPlay, Briefcase, BookOpen, Clock, CheckCircle, XCircle, Calendar
 import { Link } from 'react-router-dom';
 import './Participated.css';
 
+const API_URL = import.meta.env.VITE_API_URL;
+
+
 export default function Participated() {
     const { getToken } = useAuth();
     const { user } = useUser();
@@ -21,7 +24,7 @@ export default function Participated() {
             try {
                 const token = await getToken();
 
-                const res = await fetch('http://localhost:3000/api/registrations/history', {
+                const res = await fetch(`${API_URL}/registrations/history`, {
                     headers: {
                         Authorization: `Bearer ${token}`
                     }
@@ -201,7 +204,7 @@ export default function Participated() {
                                             <div className="card-image-area">
                                                 {item.imageUrl ? (
                                                     <img
-                                                        src={`http://localhost:3000${item.imageUrl}`}
+                                                        src={`${API_URL?.replace('/api', '')}${item.imageUrl}`}
                                                         alt={item.title}
                                                         className="card-img"
                                                         onError={(e) => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'flex'; }}

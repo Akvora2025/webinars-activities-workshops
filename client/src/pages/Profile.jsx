@@ -1,13 +1,12 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useUser, useAuth } from '@clerk/clerk-react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
 import Cropper from 'react-easy-crop';
 import { useDbUser } from '../contexts/UserContext';
 import './Profile.css';
+import api, { setAuthToken, API_URL } from '../services/api';
 import { Camera } from 'lucide-react';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
 function Profile() {
     const { user } = useUser();
@@ -44,11 +43,9 @@ function Profile() {
         try {
             setFetching(true);
             const token = await getToken();
-            const response = await axios.get(`${API_URL}/users/profile`, {
-                headers: {
-                    Authorization: `Bearer ${token}`
-                }
-            });
+            setAuthToken(token);
+            const response = await api.get('/users/profile');
+
 
             if (response.data.success) {
                 const userData = response.data.user;
@@ -62,7 +59,6 @@ function Profile() {
                 setAkvoraId(userData.akvoraId || '');
                 setAvatarUrl(userData.avatarUrl || '');
                 setAvatarPreview(userData.avatarUrl || '');
-
 
             }
         } catch (error) {
@@ -156,12 +152,12 @@ function Profile() {
         if (!avatarFile) return avatarUrl;
         const form = new FormData();
         form.append('avatar', avatarFile);
-        const response = await axios.post(`${API_URL}/users/avatar`, form, {
+        const response = await api.post('/users/avatar', form, {
             headers: {
-                Authorization: `Bearer ${token}`,
                 'Content-Type': 'multipart/form-data'
             }
         }).catch((err) => {
+
             if (err.response?.data?.error) {
                 throw new Error(err.response.data.error);
             }
@@ -182,15 +178,11 @@ function Profile() {
             const token = await getToken();
             const uploadedAvatarUrl = await uploadAvatarIfNeeded(token);
 
-            const response = await axios.post(
-                `${API_URL}/users/create-profile`,
-                { ...formData, avatarUrl: uploadedAvatarUrl },
-                {
-                    headers: {
-                        Authorization: `Bearer ${token}`
-                    }
-                }
+            const response = await api.post(
+                '/users/create-profile',
+                { ...formData, avatarUrl: uploadedAvatarUrl }
             );
+
 
             if (response.data.success) {
                 setSuccess('Profile saved successfully!');

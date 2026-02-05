@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { useAuth } from '@clerk/clerk-react';
-import axios from 'axios';
 import {
     Bell,
     Megaphone,
@@ -13,8 +12,10 @@ import {
 } from 'lucide-react';
 import { useSocket } from '../contexts/SocketContext';
 import './NotificationIcon.css';
+import api, { setAuthToken } from '../services/api';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+const API_URL = import.meta.env.VITE_API_URL;
+
 
 function NotificationIcon() {
     const { getToken, userId } = useAuth();
@@ -73,10 +74,10 @@ function NotificationIcon() {
         setLoading(true);
         try {
             const token = await getToken();
-            const response = await axios.get(`${API_URL}/notifications?limit=20`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            setAuthToken(token);
+            const response = await api.get('/notifications?limit=20');
             setNotifications(response.data.notifications);
+
         } catch (error) {
             console.error('Error fetching notifications:', error);
         } finally {
@@ -104,9 +105,9 @@ function NotificationIcon() {
 
         try {
             const token = await getToken();
-            await axios.delete(`${API_URL}/notifications/${id}`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            setAuthToken(token);
+            await api.delete(`/notifications/${id}`);
+
         } catch (error) {
             console.error('Error deleting notification:', error);
             // Optionally revert state here if needed, but for notifications it's usually fine
@@ -135,11 +136,9 @@ function NotificationIcon() {
 
         try {
             const token = await getToken();
-            await axios.put(
-                `${API_URL}/notifications/read-all`,
-                {},
-                { headers: { Authorization: `Bearer ${token}` } }
-            );
+            setAuthToken(token);
+            await api.put('/notifications/read-all', {});
+
         } catch (error) {
             console.error('Failed to mark all as read:', error);
         }
@@ -153,11 +152,9 @@ function NotificationIcon() {
 
         try {
             const token = await getToken();
-            await axios.put(
-                `${API_URL}/notifications/${notificationId}/read`,
-                {},
-                { headers: { Authorization: `Bearer ${token}` } }
-            );
+            setAuthToken(token);
+            await api.put(`/notifications/${notificationId}/read`, {});
+
         } catch (error) {
             console.error('Error marking notification as read:', error);
         }

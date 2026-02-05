@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@clerk/clerk-react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
 import './Home.css';
+import api, { setAuthToken } from '../services/api';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+const API_URL = import.meta.env.VITE_API_URL;
+
 
 function Home() {
   const { getToken } = useAuth();
@@ -19,11 +20,9 @@ function Home() {
   const checkProfileStatus = async () => {
     try {
       const token = await getToken();
-      const response = await axios.get(`${API_URL}/users/profile`, {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      });
+      setAuthToken(token);
+      const response = await api.get('/users/profile');
+
 
       if (response.data.success) {
         setProfileCompleted(response.data.user.profileCompleted);

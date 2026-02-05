@@ -2,14 +2,13 @@ import { useState, useEffect } from 'react';
 import { useAuth, useUser } from '@clerk/clerk-react';
 import { useSocket } from '../contexts/SocketContext';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import axios from 'axios';
 import toast from 'react-hot-toast';
 import EventRegistrationModal from '../components/EventRegistrationModal';
 import { calculateEventStatus, getStatusLabel } from '../utils/eventStatus';
 import { formatPrice } from '../utils/currency';
 import './Workshops.css';
+import api, { setAuthToken, API_URL } from '../services/api';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
 function Workshops() {
   const [workshops, setWorkshops] = useState([]);
@@ -103,8 +102,9 @@ function Workshops() {
 
   const fetchWorkshops = async () => {
     try {
-      const response = await axios.get(`${API_URL}/public-events?type=workshop`);
+      const response = await api.get('/public-events?type=workshop');
       setWorkshops(response.data.events);
+
     } catch (error) {
       setError('Failed to fetch workshops');
     } finally {
@@ -116,10 +116,10 @@ function Workshops() {
   const fetchMyRegistrations = async () => {
     try {
       const token = await getToken();
-      const response = await axios.get(`${API_URL}/registrations/my`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      setAuthToken(token);
+      const response = await api.get('/registrations/my');
       setMyRegistrations(response.data.registrations);
+
     } catch (error) {
       console.error('Failed to fetch registrations:', error);
     }
@@ -207,11 +207,12 @@ function Workshops() {
                 <div className="event-image">
                   {workshop.imageUrl ? (
                     <img
-                      src={`${API_URL.replace('/api', '')}${workshop.imageUrl}`}
+                      src={`${API_URL?.replace('/api', '')}${workshop.imageUrl}`}
                       alt={workshop.title}
-                      onClick={() => handleImageClick(`${API_URL.replace('/api', '')}${workshop.imageUrl}`, workshop.title)}
+                      onClick={() => handleImageClick(`${API_URL?.replace('/api', '')}${workshop.imageUrl}`, workshop.title)}
                       className="event-image-clickable"
                     />
+
                   ) : (
                     <div className="event-placeholder">
                       <div className="event-type-badge workshop">Workshop</div>

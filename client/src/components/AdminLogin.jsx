@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
 import './AdminLogin.css';
+import api from '../services/api';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+const API_URL = import.meta.env.VITE_API_URL;
+
 
 function AdminLogin() {
   const [email, setEmail] = useState('');
@@ -18,16 +19,17 @@ function AdminLogin() {
     setError('');
 
     try {
-      const response = await axios.post(`${API_URL}/admin/login`, {
+      const response = await api.post('/admin/login', {
         email,
         password
       });
+
 
       if (response.data.success) {
         // Store admin token and data
         localStorage.setItem('adminToken', response.data.token);
         localStorage.setItem('adminData', JSON.stringify(response.data.admin));
-        
+
         // Redirect to admin dashboard
         navigate('/admin/dashboard');
       }
@@ -43,7 +45,7 @@ function AdminLogin() {
       <div className="admin-login-box">
         <h1>Admin Login</h1>
         <p>Access AKVORA Admin Panel</p>
-        
+
         <form onSubmit={handleSubmit} className="admin-login-form">
           <div className="form-group">
             <label htmlFor="email">Email Address</label>
@@ -57,7 +59,7 @@ function AdminLogin() {
               placeholder="Enter admin email"
             />
           </div>
-          
+
           <div className="form-group">
             <label htmlFor="password">Password</label>
             <input
@@ -70,18 +72,18 @@ function AdminLogin() {
               placeholder="Enter admin password"
             />
           </div>
-          
+
           {error && <div className="error-message">{error}</div>}
-          
-          <button 
-            type="submit" 
+
+          <button
+            type="submit"
             className="admin-login-button"
             disabled={loading}
           >
             {loading ? 'Signing in...' : 'Sign In'}
           </button>
         </form>
-        
+
         <div className="admin-login-footer">
          
         </div>

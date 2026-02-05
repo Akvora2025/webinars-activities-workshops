@@ -1,12 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@clerk/clerk-react';
 import { QRCodeSVG } from 'qrcode.react';
-import axios from 'axios';
 import toast from 'react-hot-toast';
 import { formatPrice } from '../utils/currency';
+import api, { setAuthToken } from '../services/api';
 import './EventRegistrationModal.css';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
 function EventRegistrationModal({ event, onClose, onSuccess }) {
     const { getToken } = useAuth();
@@ -25,10 +24,10 @@ function EventRegistrationModal({ event, onClose, onSuccess }) {
     const fetchProfile = async () => {
         try {
             const token = await getToken();
-            const response = await axios.get(`${API_URL}/users/profile`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            setAuthToken(token);
+            const response = await api.get('/users/profile');
             setProfile(response.data.user);
+
         } catch (error) {
             console.error('Failed to fetch profile:', error);
             toast.error('Failed to load your profile details');
@@ -54,13 +53,13 @@ function EventRegistrationModal({ event, onClose, onSuccess }) {
         setSubmitting(true);
         try {
             const token = await getToken();
-            const response = await axios.post(`${API_URL}/registrations`, {
+            setAuthToken(token);
+            const response = await api.post(`/registrations`, {
                 workshopId: event._id, // Sending event._id as workshopId for backend compatibility
                 nameOnCertificate: profile.certificateName || `${profile.firstName} ${profile.lastName}`,
                 upiReference
-            }, {
-                headers: { Authorization: `Bearer ${token}` }
             });
+
 
             if (response.data.success) {
                 toast.success(response.data.message);
